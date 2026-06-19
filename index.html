@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Opening Book — opening theory for the open internet</title>
+<meta name="description" content="Opening Book: an approach to internet censorship circumvention built on one fact — censors decide in the first few packets. An evolving, portable repertoire of opening moves, anchored at genuine Chrome and discovered against the live network." />
+<meta property="og:title" content="Opening Book" />
+<meta property="og:description" content="Censorship decides in the first five packets. So we made the opening the whole game — an evolving repertoire of opening moves for getting through." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#090a0e; --ink2:#0f1118; --panel:#13151d; --line:#22242e; --line2:#2c2f3a;
+    --bone:#ece3d0; --paper:#d8cfba; --dim:#8b8574; --faint:#5a5750;
+    --brass:#c9a04c; --brass-hi:#e6c277; --brass-dim:#8f7237;
+    --signal:#5ccbac; --blood:#bb4f37;
+    --measure:640px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--ink); color:var(--paper);
+    font-family:"Fraunces",Georgia,serif; font-weight:400;
+    font-size:19px; line-height:1.66; font-optical-sizing:auto;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  /* layered atmosphere: pools of light + a faint board, fading out */
+  .bg{position:fixed; inset:0; z-index:-3; pointer-events:none;
+    background:
+      radial-gradient(1200px 760px at 80% -10%, rgba(201,160,76,.12), transparent 58%),
+      radial-gradient(1000px 820px at 8% 112%, rgba(92,203,172,.06), transparent 58%),
+      linear-gradient(180deg,#0b0d13 0%,#080a0e 55%,#090a0e 100%);}
+  .board{position:fixed; inset:-2px; z-index:-2; pointer-events:none; opacity:.5;
+    background-image:
+      linear-gradient(rgba(236,227,208,.022) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(236,227,208,.022) 1px,transparent 1px);
+    background-size:54px 54px;
+    -webkit-mask-image:radial-gradient(120% 90% at 50% 22%,#000 0%,transparent 78%);
+            mask-image:radial-gradient(120% 90% at 50% 22%,#000 0%,transparent 78%);}
+  .grain{position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.045; mix-blend-mode:overlay}
+
+  .wrap{max-width:920px; margin:0 auto; padding:0 30px}
+  a{color:var(--signal); text-decoration:none; border-bottom:1px solid rgba(92,203,172,.32); transition:border-color .2s}
+  a:hover{border-color:var(--signal)}
+  em{font-style:italic; color:var(--bone)}
+  strong{font-weight:600; color:#fff}
+  .mono{font-family:"JetBrains Mono",monospace}
+
+  /* ---------- HERO ---------- */
+  header{position:relative; min-height:100svh; display:flex; flex-direction:column; justify-content:center; padding:96px 0 72px}
+  .crest{display:flex; align-items:center; gap:13px; margin-bottom:46px}
+  .crest svg{width:30px;height:30px;flex:none}
+  .crest .wm{font-family:"JetBrains Mono",monospace; font-size:12px; letter-spacing:.34em; text-transform:uppercase; color:var(--dim)}
+  .crest .eco{margin-left:auto; font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.2em; color:var(--faint)}
+  header h1{
+    font-size:clamp(44px,8.4vw,96px); font-weight:300; letter-spacing:-.032em; line-height:1.02;
+  }
+  header h1 b{font-weight:500; font-style:italic; color:#fff}
+  header h1 .br{color:var(--brass-hi); font-weight:500}
+  .lede{margin-top:30px; font-size:clamp(20px,2.5vw,26px); font-weight:300; color:#d9d0bd; max-width:30ch; line-height:1.4}
+  .lede i{font-style:italic; color:var(--brass-hi)}
+
+  /* SNI fragmentation motif */
+  .motif{margin-top:60px; max-width:560px}
+  .host{display:flex; align-items:stretch; gap:5px; font-family:"JetBrains Mono",monospace; font-weight:500; font-size:clamp(15px,3.4vw,22px)}
+  .host .cell{
+    width:1.6em; height:2.1em; display:grid; place-items:center; border-radius:4px;
+    color:#cfe9e0; background:linear-gradient(180deg,rgba(92,203,172,.16),rgba(92,203,172,.04));
+    border:1px solid rgba(92,203,172,.34);
+  }
+  .host .gap{position:relative; width:2px; align-self:stretch; margin:0 9px;
+    background:var(--blood); border-radius:2px;
+    box-shadow:0 0 12px 1px rgba(187,79,55,.6);
+    transform:scaleY(0); transform-origin:center; opacity:0;}
+  .host.cut .gap{animation:cut 1.1s .7s cubic-bezier(.2,.8,.2,1) forwards}
+  .host.cut .seg2{animation:shove 1.1s .7s cubic-bezier(.2,.8,.2,1) forwards}
+  .seg,.seg2{display:flex; gap:5px}
+  @keyframes cut{to{transform:scaleY(1); opacity:1}}
+  @keyframes shove{from{transform:translateX(-13px)} to{transform:translateX(0)}}
+  .mcap{margin-top:16px; font-family:"JetBrains Mono",monospace; font-size:11.5px; letter-spacing:.05em; color:var(--faint)}
+  .mcap b{color:var(--blood); font-weight:500}
+  .scroll{margin-top:52px; font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.24em; text-transform:uppercase; color:var(--faint)}
+
+  /* ---------- SPREAD: notation rail + body ---------- */
+  section{padding:74px 0; border-top:1px solid var(--line)}
+  .spread{display:grid; grid-template-columns:150px minmax(0,var(--measure)); gap:46px; max-width:920px; margin:0 auto}
+  .rail{position:relative}
+  .rail .no{font-family:"JetBrains Mono",monospace; font-weight:700; font-size:30px; color:var(--brass); letter-spacing:-.02em; line-height:1}
+  .rail .piece{font-size:22px; color:var(--brass-dim); margin-bottom:10px; display:block}
+  .rail .ann{margin-top:16px; font-family:"JetBrains Mono",monospace; font-size:11.5px; line-height:1.6; letter-spacing:.02em; color:var(--dim); border-left:1px solid var(--line2); padding-left:12px}
+  .rail .ann .s{color:var(--signal)} .rail .ann .b{color:var(--blood)}
+  .body{min-width:0}
+  .body h2{font-size:clamp(27px,4.4vw,38px); font-weight:400; letter-spacing:-.02em; line-height:1.1; margin-bottom:22px}
+  .body h2 .it{font-style:italic; color:#fff}
+  .body p{margin:0 0 20px; color:#cfc6b3}
+  .body p.lead{font-size:21px; color:var(--bone)}
+  .dim{color:var(--dim)}
+
+  ul{list-style:none; margin:4px 0 22px}
+  li{position:relative; padding-left:28px; margin-bottom:15px; color:#cfc6b3}
+  li::before{content:"♦"; position:absolute; left:2px; top:1px; font-size:11px; color:var(--brass-dim)}
+  li b{color:#fff}
+
+  .code{font-family:"JetBrains Mono",monospace; font-size:13px; line-height:1.75; color:#cdd6cf;
+    background:var(--ink2); border:1px solid var(--line); border-radius:12px;
+    padding:20px 22px; margin:24px 0; overflow-x:auto; white-space:pre; letter-spacing:0}
+  .code .k{color:var(--brass-hi)} .code .c{color:var(--faint)} .code .s{color:var(--signal)} .code .b{color:var(--blood)}
+
+  blockquote{margin:30px 0; padding:6px 0 6px 24px; border-left:2px solid var(--brass-dim);
+    font-style:italic; font-weight:300; font-size:clamp(21px,3vw,27px); line-height:1.32; color:#e7ddc9}
+
+  .duo{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:26px 0}
+  .chip{background:linear-gradient(180deg,rgba(236,227,208,.03),rgba(236,227,208,.008)); border:1px solid var(--line); border-radius:13px; padding:22px}
+  .chip .t{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--signal); display:block; margin-bottom:11px}
+  .chip h3{font-size:20px; font-weight:500; margin-bottom:8px; letter-spacing:-.01em}
+  .chip p{font-size:15.5px; color:#bdb4a2; margin:0}
+
+  .line-moves{margin:18px 0 4px}
+  .mv{display:grid; grid-template-columns:46px 1fr; gap:18px; padding:14px 0; border-bottom:1px solid var(--line); align-items:baseline}
+  .mv:last-child{border-bottom:0}
+  .mv .n{font-family:"JetBrains Mono",monospace; font-size:13px; font-weight:500; color:var(--brass)}
+  .mv .x{font-size:17px; color:#cbc2af}
+  .mv .x .s{font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--signal); margin-left:8px}
+  .mv.done .n{color:var(--signal)}
+  .mv.future .n{color:var(--faint)} .mv.future .x{color:var(--dim)}
+
+  /* ---------- FOOTER ---------- */
+  footer{border-top:1px solid var(--line); padding:60px 0 90px}
+  footer .crest{margin-bottom:20px}
+  footer p{color:#c4bba8; max-width:48ch}
+  footer .links{display:flex; flex-wrap:wrap; gap:10px 28px; margin:22px 0 0; font-family:"JetBrains Mono",monospace; font-size:13px}
+  footer .fine{margin-top:26px; font-size:13px; line-height:1.6; color:var(--faint); max-width:54ch}
+  footer .fine em{color:var(--dim)}
+
+  /* reveal */
+  .rise{opacity:0; transform:translateY(20px); transition:opacity .85s cubic-bezier(.2,.7,.2,1), transform .85s cubic-bezier(.2,.7,.2,1)}
+  .rise.in{opacity:1; transform:none}
+
+  @media (max-width:780px){
+    body{font-size:18px}
+    .spread{grid-template-columns:1fr; gap:18px}
+    .rail{display:flex; align-items:baseline; gap:14px}
+    .rail .piece{margin:0}
+    .rail .ann{display:none}
+    .duo{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .rise{opacity:1;transform:none;transition:none}
+    .host.cut .gap{animation:none;transform:scaleY(1);opacity:1}
+    .host.cut .seg2{animation:none}
+  }
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="board"></div>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+
+<header>
+  <div class="wrap">
+    <div class="crest rise">
+      <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+        <rect x="1.2" y="1.2" width="37.6" height="37.6" rx="8" stroke="#c9a04c" stroke-opacity=".55"/>
+        <path d="M13 28.5h14M14.5 28.5c0-7.5 1.8-9.2 1.8-13.2 0-2.2-1.3-3.3-1.3-3.3h6.9s-1.3 1.1-1.3 3.3c0 4 1.8 5.7 1.8 13.2" stroke="#c9a04c" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="20" cy="9.4" r="2.3" fill="#5ccbac"/>
+      </svg>
+      <span class="wm">Opening&nbsp;Book</span>
+      <span class="eco">getlantern · circumvention</span>
+    </div>
+    <h1 class="rise" style="transition-delay:.08s">Censorship decides in the <span class="br">first&nbsp;five&nbsp;packets</span>.</h1>
+    <p class="lede rise" style="transition-delay:.18s">So we made the opening the whole game — an <i>evolving repertoire</i> of opening moves for getting through.</p>
+
+    <div class="motif rise" style="transition-delay:.3s">
+      <div class="host cut" aria-label="the SNI hostname, fragmented across a segment boundary">
+        <span class="seg"><span class="cell">e</span><span class="cell">x</span><span class="cell">a</span><span class="cell">m</span><span class="cell">p</span></span>
+        <span class="gap"></span>
+        <span class="seg2"><span class="cell">l</span><span class="cell">e</span><span class="cell">.</span><span class="cell">c</span><span class="cell">o</span><span class="cell">m</span></span>
+      </div>
+      <div class="mcap"><b>↑ the name, split across the boundary</b> — so the inspector never reads it whole</div>
+    </div>
+    <div class="scroll rise" style="transition-delay:.46s">↓ &nbsp; the theory</div>
+  </div>
+</header>
+
+<section>
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♚</span><span class="no">01</span><div class="ann">the opening is <span class="b">observed</span>; the rest is mostly not</div></div>
+    <div class="body">
+      <h2 class="rise">Classify, then <span class="it">treat</span>.</h2>
+      <p class="lead rise">A modern censor doesn't read your whole conversation. It glances at the opening of every connection — the TLS <span class="dim">ClientHello</span>, the server name, the JA3/JA4 fingerprint, the sizes and timing of the first few packets — files the flow under <em>TLS</em>, <em>QUIC</em>, <em>DNS</em>, <em>WebRTC</em>… applies a policy, and largely stops looking.</p>
+      <ul>
+        <li class="rise"><b>Looking like an allowed bucket beats looking like nothing.</b> Positive mimicry is the win.</li>
+        <li class="rise"><b>“Uncategorizable” is now its own — increasingly punished — bucket.</b> High-entropy, unclassifiable traffic gets throttled or dropped.</li>
+        <li class="rise"><b>So all the leverage is in the opening</b> — which is also, conveniently, cheap: a few hundred bytes, once per connection.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♟</span><span class="no">02</span><div class="ann">a calculated opening, anchored at <span class="s">genuine Chrome</span></div></div>
+    <div class="body">
+      <h2 class="rise">The opening <span class="it">gambit</span>.</h2>
+      <p class="rise">A <strong>gambit</strong> shapes the opening: what goes in the ClientHello, how it's framed into TLS records, and how those bytes are split across TCP segments and timed on the wire — fragmenting the hostname across a segment boundary, say, so a name-matching censor never sees it whole.</p>
+      <blockquote class="rise">Anchored at a real Chrome handshake — a fidelity floor, so you never look <em>worse</em> than genuine Chrome — then mutated outward to find a variant that slips past while a real server still accepts it.</blockquote>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♜</span><span class="no">03</span><div class="ann">parameters, not code — shippable in hours</div></div>
+    <div class="body">
+      <h2 class="rise">A gambit is <span class="it">data</span>.</h2>
+      <p class="rise">It's a portable parameter set across three layers — so a move can be reasoned about, mutated, signed, and delivered without shipping a new client.</p>
+      <div class="code rise"><span class="c">// a gambit — deltas over a genuine-Chrome anchor</span>
+anchor: <span class="s">chrome-137</span>
+clienthello: { <span class="k">extension_order</span>, <span class="k">grease</span>, <span class="k">padding</span>, <span class="k">ech</span>, … }   <span class="c">// what's in the hello</span>
+records:     { <span class="k">size_limit</span>, <span class="k">split</span> }                       <span class="c">// how it's framed</span>
+wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundary</span>, <span class="k">delay</span> }     <span class="c">// how it hits the wire</span>
+<span class="c">// signed · versioned · anti-rollback</span></div>
+      <p class="rise dim">Most moves stay <strong style="color:var(--bone)">well-formed</strong> — a different-but-valid Chrome — and run anywhere. A tagged minority reach for byte-level tricks and are reviewed before they ship.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♞</span><span class="no">04</span><div class="ann">discover once, deploy across both</div></div>
+    <div class="body">
+      <h2 class="rise">One genome, <span class="it">two fleets</span>.</h2>
+      <p class="rise">Because a gambit is just parameters, the same one drives two different engines — and reaches two different client populations.</p>
+      <div class="duo">
+        <div class="chip rise"><span class="t">executor · rust</span><h3>BoringSSL</h3><p>Lean, iOS-capable, byte-exact Chrome — the engine on the lightweight client.</p></div>
+        <div class="chip rise" style="transition-delay:.08s"><span class="t">executor · go</span><h3>uTLS</h3><p>The full ClientHello toolbox, already deployed across the established fleet.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♛</span><span class="no">05</span><div class="ann">the server is the <span class="s">oracle</span>; no client phone-home</div></div>
+    <div class="body">
+      <h2 class="rise">The book is <span class="it">discovered</span>.</h2>
+      <p class="rise">No one hand-writes the winning moves. A search — a genetic algorithm guided by a language model grounded in a corpus of known techniques — proposes and mutates gambits, reasoning about <em>why</em> the last attempt failed.</p>
+      <blockquote class="rise">A gambit works if its traffic reaches one of our servers. The server is the oracle — a connection that arrives <em>is</em> the proof.</blockquote>
+      <ul>
+        <li class="rise"><b>Fitness is server-side.</b> Candidates run head-to-head across comparable users; whichever reaches more, wins.</li>
+        <li class="rise"><b>Servers rotate.</b> So a blocked <em>address</em> looks different from a blocked <em>move</em> — search and fleet co-evolve.</li>
+        <li class="rise"><b>Honest fitness.</b> Reward getting through; penalize standing out — a move that wins by becoming a new anomaly is no win.</li>
+        <li class="rise"><b>It never ends.</b> The censor adapts, so the repertoire adapts with it.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♝</span><span class="no">06</span><div class="ann">power where it pays, fidelity where it counts</div></div>
+    <div class="body">
+      <h2 class="rise">Keep fidelity <span class="it">native</span>.</h2>
+      <p class="rise">The parts that must look byte-exact — the real TLS fingerprint — stay in native, audited code, where they can be exact and stay current. Most evasion is a recombination of those vetted building blocks; a sandboxed module is held in reserve for genuinely novel logic.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="spread">
+    <div class="rail rise"><span class="piece">⚐</span><span class="no">07</span><div class="ann">from a fragment to a living book</div></div>
+    <div class="body">
+      <h2 class="rise">The <span class="it">line</span>.</h2>
+      <div class="line-moves">
+        <div class="mv done rise"><span class="n">P1</span><span class="x">Shape the opening on the wire — SNI-boundary fragmentation + timing. <span class="s">built</span></span></div>
+        <div class="mv rise"><span class="n">P2</span><span class="x">The signed gambit genome + the ClientHello knobs.</span></div>
+        <div class="mv rise"><span class="n">P3</span><span class="x">Gambits computed per connection.</span></div>
+        <div class="mv future rise"><span class="n">P4</span><span class="x">Byte-level moves for the hard cases.</span></div>
+        <div class="mv future rise"><span class="n">P5</span><span class="x">The discovery loop, running against the live fleet.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="crest">
+      <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="1.2" y="1.2" width="37.6" height="37.6" rx="8" stroke="#c9a04c" stroke-opacity=".4"/><path d="M13 28.5h14M14.5 28.5c0-7.5 1.8-9.2 1.8-13.2 0-2.2-1.3-3.3-1.3-3.3h6.9s-1.3 1.1-1.3 3.3c0 4 1.8 5.7 1.8 13.2" stroke="#c9a04c" stroke-opacity=".7" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span class="wm">Opening&nbsp;Book</span>
+    </div>
+    <p>An approach to internet censorship circumvention from the team behind <a href="https://lantern.io">Lantern</a> — a research direction, not a product spec.</p>
+    <div class="links">
+      <a href="https://lantern.io">lantern.io</a>
+      <a href="https://github.com/getlantern">github.com/getlantern</a>
+    </div>
+    <p class="fine">Specific live strategies are deliberately omitted: the repertoire is meant to be polymorphic and ever-changing. This page describes the <em>approach</em>, not the moves currently on the board.</p>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:.12, rootMargin:'0px 0px -7% 0px'});
+  document.querySelectorAll('.rise').forEach(el=>io.observe(el));
+  requestAnimationFrame(()=>document.querySelectorAll('header .rise').forEach(el=>el.classList.add('in')));
+</script>
+</body>
+</html>
