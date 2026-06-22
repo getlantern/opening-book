@@ -222,7 +222,8 @@ clienthello: { <span class="k">extension_order</span>, <span class="k">grease</s
 records:     { <span class="k">size_limit</span>, <span class="k">split</span> }                       <span class="c">// how it's framed</span>
 wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundary</span>, <span class="k">delay</span> }     <span class="c">// how it hits the wire</span>
 <span class="c">// signed · versioned · anti-rollback</span></div>
-      <p class="rise dim">Most moves stay <strong style="color:var(--bone)">well-formed</strong> — a different-but-valid Chrome — and run anywhere. A tagged minority reach for byte-level tricks and are reviewed before they ship.</p>
+      <p class="rise">The vocabulary is wide — which extensions, in what (seeded) order; whether to GREASE, pad the hello to a length, offer post-quantum, grease or really negotiate ECH; how the hello is cut into records; where the bytes split across TCP segments and how they're timed. Each knob is a delta over the anchor, so one integer can be the whole move.</p>
+      <p class="rise dim">Most moves stay <strong style="color:var(--bone)">well-formed</strong> — a different-but-valid Chrome — and run anywhere. A tagged minority reach for byte-level tricks and are reviewed before they ship. <span style="color:var(--bone)">The genome can write more than any one engine plays today</span>: the lean client runs the well-formed moves and the framing/timing layers now; the full byte-level range lights up on the Go engine and a dedicated byte-builder.</p>
     </div>
   </div>
 </section>
@@ -270,12 +271,24 @@ wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundar
 
 <section>
   <div class="spread">
-    <div class="rail rise"><span class="piece">⚐</span><span class="no">07</span><div class="ann">from a fragment to a living book</div></div>
+    <div class="rail rise"><span class="piece">♙</span><span class="no">07</span><div class="ann">opening theory — the rest is a <span class="s">different game</span></div></div>
+    <div class="body">
+      <h2 class="rise">Where the move <span class="it">ends</span>.</h2>
+      <p class="rise">A gambit shapes the opening, and only the opening — the hello, its records, the first few segments. Once the handshake completes the gambit is silent; the rest of the connection runs as the transport sees fit.</p>
+      <p class="rise">That's the wager. A censor files its verdict on the first few hundred bytes; if the opening passes, the opening was the game. Shaping the long tail is expensive and high-volume, and the opening is cheap — a few hundred bytes, once. So the book is opening theory: it spends its moves where the verdict is made, and leaves the middlegame to the transport.</p>
+      <blockquote class="rise">The door to the middlegame is left ajar — room reserved for post-opening moves, unused for now — for the day a censor learns to read past the opening.</blockquote>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="spread">
+    <div class="rail rise"><span class="piece">⚐</span><span class="no">08</span><div class="ann">from a fragment to a living book</div></div>
     <div class="body">
       <h2 class="rise">The <span class="it">line</span>.</h2>
       <div class="line-moves">
         <div class="mv done rise"><span class="n">P1</span><span class="x">Shape the opening on the wire — SNI-boundary fragmentation + timing. <span class="s">built</span></span></div>
-        <div class="mv rise"><span class="n">P2</span><span class="x">The signed gambit genome + the ClientHello knobs.</span></div>
+        <div class="mv done rise"><span class="n">P2</span><span class="x">The signed gambit genome + the ClientHello knobs. <span class="s">built</span></span></div>
         <div class="mv rise"><span class="n">P3</span><span class="x">Gambits computed per connection.</span></div>
         <div class="mv future rise"><span class="n">P4</span><span class="x">Byte-level moves for the hard cases.</span></div>
         <div class="mv future rise"><span class="n">P5</span><span class="x">The discovery loop, running against the live fleet.</span></div>
