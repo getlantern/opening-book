@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Opening Book — opening theory for the open internet</title>
-<meta name="description" content="Opening Book: an approach to internet censorship circumvention built on one fact — censors decide in the opening of the flow. An evolving, portable repertoire of opening moves, anchored at genuine Chrome and discovered against the live network." />
+<meta name="description" content="Opening Book: an approach to internet censorship circumvention built on one fact — censors decide in the opening of the flow. An evolving, portable repertoire of opening moves — across TLS, QUIC, DNS, WebRTC, HTTP and more — anchored at genuine traffic and discovered against the live network." />
 <meta property="og:title" content="Opening Book" />
 <meta property="og:description" content="Censorship decides in the opening of the flow. So we made the opening the whole game — an evolving repertoire of opening moves for getting through." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -204,7 +204,7 @@
     <div class="rail rise"><span class="piece">♟</span><span class="no">02</span><div class="ann">a calculated opening, anchored at <span class="s">genuine Chrome</span></div></div>
     <div class="body">
       <h2 class="rise">The opening <span class="it">gambit</span>.</h2>
-      <p class="rise">A <strong>gambit</strong> shapes the opening: what goes in the ClientHello, how it's framed into TLS records, and how those bytes are split across TCP segments and timed on the wire — fragmenting the hostname across a segment boundary, say, so a name-matching censor never sees it whole.</p>
+      <p class="rise">A <strong>gambit</strong> shapes the opening — here, a TLS handshake, the worked example throughout: what goes in the ClientHello, how it's framed into records, and how those bytes are split across TCP segments and timed on the wire — fragmenting the hostname across a segment boundary, say, so a name-matching censor never sees it whole. The opening needn't be a ClientHello, though: the same move anchors a QUIC Initial, a DNS query, a WebRTC or HTTP opening just as well <span class="dim">(§08)</span>.</p>
       <blockquote class="rise">Anchored at a real Chrome handshake — a fidelity floor, so you never look <em>worse</em> than genuine Chrome — then mutated outward to find a variant that slips past while a real server still accepts it.</blockquote>
     </div>
   </div>
@@ -222,7 +222,7 @@ clienthello: { <span class="k">extension_order</span>, <span class="k">grease</s
 records:     { <span class="k">size_limit</span>, <span class="k">split</span> }                       <span class="c">// how it's framed</span>
 wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundary</span>, <span class="k">delay</span> }     <span class="c">// how it hits the wire</span>
 <span class="c">// signed · versioned · anti-rollback</span></div>
-      <p class="rise">The vocabulary is wide — which extensions, in what (seeded) order; whether to GREASE, pad the hello to a length, offer post-quantum, grease or really negotiate ECH; how the hello is cut into records; where the bytes split across TCP segments and how they're timed. Each knob is a delta over the anchor, so one integer can be the whole move.</p>
+      <p class="rise">The vocabulary is wide — which extensions, in what (seeded) order; whether to GREASE, pad the hello to a length, offer post-quantum, grease or really negotiate ECH; how the hello is cut into records; where the bytes split across TCP segments and how they're timed. Each knob is a delta over the anchor, so one integer can be the whole move. <span class="dim">(This is the TLS dialect's genome; a QUIC, DNS, WebRTC, or HTTP gambit carries the layers of <em>that</em> protocol's opening instead — §08.)</span></p>
       <p class="rise dim">Most moves stay <strong style="color:var(--bone)">well-formed</strong> — a different-but-valid Chrome — and run anywhere. A tagged minority reach for byte-level tricks and are reviewed before they ship. <span style="color:var(--bone)">The genome can write more than any one engine plays today</span>: the lean client now runs the well-formed moves, the framing and timing layers, and — on stock BoringSSL, no fork — explicit extension and cipher order plus session-id injection; only the last byte-exact tricks (an exact seed, padding to a length, a raw hello) still wait for the Go engine and a dedicated byte-builder.</p>
     </div>
   </div>
@@ -286,8 +286,8 @@ wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundar
     <div class="rail rise"><span class="piece">♘</span><span class="no">08</span><div class="ann">the board is wider than <span class="s">one protocol</span></div></div>
     <div class="body">
       <h2 class="rise">Other openings, other <span class="it">ports</span>.</h2>
-      <p class="rise">The opening a censor reads isn't always a TLS hello. A media relay opens with a STUN binding on its own port; a remote-desktop session opens in the clear before it upgrades to TLS; mail, and others, each open differently. Every one is a board the censor has its own reasons not to wall off — block the port and you block the real thing that lives there.</p>
-      <p class="rise">So the repertoire generalizes: a gambit need not be a ClientHello. Anchor at a genuine opening of <em>that</em> protocol, mutate outward, and let the same discovered book — signed, versioned, scored by what reaches the server — find the moves. The <strong>port itself becomes part of the move</strong>, chosen for the company it keeps.</p>
+      <p class="rise">The opening a censor reads isn't always a TLS hello — it's whatever the protocol leads with, and the verdict lands on that opening just the same. A <strong>QUIC</strong> Initial packet, its ClientHello buried in encrypted crypto frames. A <strong>DNS</strong> query — resolution itself, the thing every connection needs first. A <strong>WebRTC</strong> call's STUN binding and DTLS handshake, the shape of every video meeting. An <strong>HTTP</strong> request that can ride a CDN it shares with half the web. A remote-desktop or mail session that opens in the clear before it upgrades. Each is a board the censor has its own reasons not to wall off — block it and you block the real thing that lives there.</p>
+      <p class="rise">So the repertoire generalizes past TLS: a gambit need not be a ClientHello. Anchor at a genuine opening of <em>that</em> protocol, mutate outward, and let the same discovered book — signed, versioned, scored by what reaches the server — find the moves. TLS is simply the dialect we play first; QUIC, DNS, WebRTC, and HTTP are the same game on a wider board. The protocol, and the <strong>port</strong> it speaks on, become part of the move — chosen for the company they keep.</p>
     </div>
   </div>
 </section>
