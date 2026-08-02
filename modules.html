@@ -22,6 +22,15 @@
   .subnav a:hover{color:var(--signal)}
   .subnav .home{color:var(--brass); margin-right:auto}
   .subnav .home:hover{color:var(--brass-hi)}
+  /* Six links in a flex row overflow a phone. Scroll them rather than wrapping: wrapping doubles
+     the sticky bar's height and eats the viewport on exactly the screens that have least of it.
+     `margin-right:auto` on .home is dropped here — with scrolling it would push the rest off. */
+  @media (max-width:700px){
+    .subnav .in{overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; gap:18px}
+    .subnav .in::-webkit-scrollbar{display:none}
+    .subnav a{white-space:nowrap}
+    .subnav .home{margin-right:4px}
+  }
 
   table.abi{width:100%; border-collapse:collapse; margin:26px 0; font-size:14.5px}
   table.abi th{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.16em;
@@ -123,7 +132,7 @@
             <td>Called after every invocation once output has been copied out. Rewind your scratch arena here.</td></tr>
       </table>
 
-      <p>The three work roles are independent, and a module may be exactly one of them. A pure byte transform exports the two <code>transform_*</code> functions and nothing else; the client sees no <code>handshake_step</code>, so it dials straight through without asking. Nothing in the wiring knows which protocol you implement.</p>
+      <p>The three work roles are independent, and a module may be exactly one of them. A pure byte transform exports <code>memory</code> and <code>alloc</code> — always required — plus the two <code>transform_*</code> functions, and no <em>other</em> work-role export; the client sees no <code>handshake_step</code>, so it dials straight through without asking. Nothing in the wiring knows which protocol you implement.</p>
 
       <div class="note"><b>reset is not a destructor.</b> It rewinds the per-call scratch arena. Anything you keep in globals or at fixed addresses — keys derived during a handshake, a counter, negotiated state — survives across calls, and is exactly how a handshake module hands state to its own steady-state transforms.</div>
     </div>
@@ -212,8 +221,8 @@
     <div class="rail"><span class="piece">♟</span><div class="no">06</div>
       <div class="ann">Eighty-three lines, <span class="s">no_std</span>, no dependencies.</div></div>
     <div class="body">
-      <h2>A whole module, <span class="it">start to finish</span>.</h2>
-      <p class="lead">The reference module XORs every byte with a constant. It is deliberately trivial as a transform, and complete as an example: it is the same shape a serious module has.</p>
+      <h2>The shape of a <span class="it">real one</span>.</h2>
+      <p class="lead">The reference module XORs every byte with a constant — deliberately trivial as a transform, and the same shape a serious module has. The excerpts below are <strong>excerpts</strong>, not a compilable listing; the complete module is about eighty lines of <code>no_std</code> Rust with no dependencies.</p>
 
       <div class="code"><span class="c">// The scratch arena, sized to the host's 1 MiB maximum so no valid</span>
 <span class="c">// call is ever rejected. `alloc` hands the host this one buffer.</span>
@@ -228,12 +237,13 @@
     }
     <span class="c">// … return the arena's address in linear memory</span>
 }</div>
+      <p class="dim" style="font-size:15px;margin-top:-8px">Abridged — the elided bodies, the <code>memory</code> export and the two transforms are in the module's source.</p>
 
       <p>Three decisions in that fragment are worth copying. The arena is <b>static, not stack</b>, so the region you return is still valid when the host reads it. <code>alloc</code> <b>traps rather than clamps</b> on an impossible request — a truncated buffer would corrupt a connection silently, and silence is the enemy. And the module is <code>no_std</code> with no dependencies, which is why the compiled artifact is measured in kilobytes.</p>
 
       <p>The transform itself is the boring part: read <code class="mono">len</code> bytes at <code class="mono">ptr</code>, XOR each with the key, write them back, return the packed region. Because XOR is involutive, the same code serves as both <code>transform_out</code> and <code>transform_in</code> — a real module would have two different functions here.</p>
 
-      <div class="note"><b>Start by copying it.</b> The reference module is the smallest thing that exercises the full production path: it is compiled, signed, loaded, and round-tripped by the client's own test suite, through exactly the code path a shipped module takes. If your module has the same skeleton, the plumbing is already proven.</div>
+      <div class="note"><b>Start from it.</b> The reference module is the smallest thing that exercises the full production path: it is compiled, signed, loaded, and round-tripped by the client's own test suite, through exactly the code path a shipped module takes. If your module has the same skeleton, the plumbing is already proven.</div>
     </div>
   </div>
 </section>
@@ -248,13 +258,13 @@
 
       <ol class="steps">
         <li>Compile to <code class="mono">wasm32-unknown-unknown</code>, release.</li>
-        <li>Sign the module — the signature covers the name, the version, <em>and</em> the bytes together, so an artifact cannot be renamed or rolled back to an older version and still verify.</li>
+        <li>Sign the module — the signature covers the name, the version, <em>and</em> the bytes together, so an artifact cannot be renamed, nor have its version relabelled, without breaking verification.</li>
         <li>The result is a single self-describing artifact the client loads by path or by fetch.</li>
       </ol>
 
       <p>The build script does all three, and it is the only step in the whole project that needs the wasm toolchain — ordinary builds and CI consume the committed artifacts rather than rebuilding them. Development artifacts are signed with a development key that ships in the repo, so you can iterate without touching anything sensitive; production signing is a separate, deliberately inconvenient path.</p>
 
-      <div class="note warn"><b>Version monotonically.</b> Because the version is inside the signed payload, a module cannot be silently downgraded to an earlier, weaker one — but only if you never reuse a version number for different bytes.</div>
+      <div class="note warn"><b>Signing alone does not stop a downgrade.</b> An older artifact was validly signed, so it still verifies — replaying one is a real attack, and no signature scheme prevents it by itself. The client therefore keeps an <b>anti-rollback floor</b>: the highest version it has installed, checked before the module is compiled, so an artifact carrying a lower version is refused even though its signature is perfectly good. Verification advances the floor. What this asks of you is only that versions increase and that a number is never reused for different bytes.</div>
     </div>
   </div>
 </section>

@@ -138,6 +138,10 @@
     .duo{grid-template-columns:1fr}
   }
   @media (prefers-reduced-motion:reduce){
+    /* `html{scroll-behavior:smooth}` above is motion too — every in-page anchor animates the
+       viewport. Suppressing the reveals while leaving that on honours the preference only halfway,
+       and smooth scrolling is a common vestibular trigger. */
+    html{scroll-behavior:auto}
     .rise{opacity:1;transform:none;transition:none}
     .host.cut .gap{animation:none;transform:scaleY(1);opacity:1}
     .host.cut .seg2{animation:none}
