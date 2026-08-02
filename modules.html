@@ -14,7 +14,7 @@
 <style>
   /* Page-local components: the reference tables and callouts this chapter needs and the
      narrative page does not. Everything else comes from the shared sheet. */
-  .subnav{position:sticky; top:0; z-index:10; backdrop-filter:blur(9px);
+  .subnav{position:sticky; top:0; z-index:10; -webkit-backdrop-filter:blur(9px); backdrop-filter:blur(9px);
     background:rgba(9,10,14,.82); border-bottom:1px solid var(--line)}
   .subnav .in{max-width:920px; margin:0 auto; padding:13px 30px; display:flex; align-items:center; gap:22px;
     font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase}
@@ -52,7 +52,9 @@
   .warn b{color:var(--blood)}
 
   .steps{counter-reset:step; list-style:none; margin:26px 0}
-  .steps li{counter-increment:step; padding-left:44px; margin-bottom:17px}
+  /* Explicit rather than inheriting `li{position:relative}` from the shared sheet: the counter
+     below is absolutely positioned, and this page should not break if that rule moves. */
+  .steps li{counter-increment:step; position:relative; padding-left:44px; margin-bottom:17px}
   .steps li::before{content:counter(step); position:absolute; left:0; top:-1px;
     font-family:"JetBrains Mono",monospace; font-weight:700; font-size:13px; color:var(--brass);
     width:26px; height:26px; display:grid; place-items:center;
@@ -64,7 +66,8 @@
 </style>
 </head>
 <body>
-<div class="bg"></div><div class="board"></div><div class="grain"></div>
+<div class="bg"></div><div class="board"></div>
+<svg class="grain" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
 
 <nav class="subnav">
   <div class="in">
@@ -80,7 +83,7 @@
 <header style="min-height:auto; padding:82px 0 58px">
   <div class="wrap">
     <div class="crest">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#c9a04c" stroke-width="1.3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#c9a04c" stroke-width="1.3" aria-hidden="true">
         <path d="M7 21h10M8.5 21c0-3 1-4 1-6M15.5 21c0-3-1-4-1-6M6 8h12M9 3h6l1 3H8zM7.5 8c0 4 2 5 4.5 5s4.5-1 4.5-5"/>
       </svg>
       <span class="wm">Opening Book</span>
@@ -262,9 +265,10 @@
         <li>The result is a single self-describing artifact the client loads by path or by fetch.</li>
       </ol>
 
-      <p>The build script does all three, and it is the only step in the whole project that needs the wasm toolchain — ordinary builds and CI consume the committed artifacts rather than rebuilding them. Development artifacts are signed with a development key that ships in the repo, so you can iterate without touching anything sensitive; production signing is a separate, deliberately inconvenient path.</p>
+      <p>The build script does all three, and it is the only step in the whole project that needs the wasm toolchain — ordinary builds and CI consume the committed artifacts rather than rebuilding them.</p>
+      <p>Development artifacts are signed with a development key that ships in the repo, so you can iterate without touching anything sensitive. That key is <em>only</em> a fallback for builds with no production key pinned: a release pins its own verification key, the production private half never leaves its vault, and CI is public-key only. So a module signed with the repo key is loadable by a development build and by nothing you would ship — which is the property that makes shipping the dev key in the open safe.</p>
 
-      <div class="note warn"><b>Signing alone does not stop a downgrade.</b> An older artifact was validly signed, so it still verifies — replaying one is a real attack, and no signature scheme prevents it by itself. The client therefore keeps an <b>anti-rollback floor</b>: the highest version it has installed, checked before the module is compiled, so an artifact carrying a lower version is refused even though its signature is perfectly good. Verification advances the floor. What this asks of you is only that versions increase and that a number is never reused for different bytes.</div>
+      <div class="note warn"><b>Signing alone does not stop a downgrade.</b> An older artifact was validly signed, so it still verifies — replaying one is a real attack, and no signature scheme prevents it by itself. The client therefore keeps an <b>anti-rollback floor</b>: the highest version it has installed, checked before the module is compiled, so an artifact carrying a lower version is refused even though its signature is perfectly good. What this asks of you is only that versions increase and that a number is never reused for different bytes.</div>
     </div>
   </div>
 </section>
