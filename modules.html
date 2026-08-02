@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Write a module — Opening Book</title>
+<meta name="description" content="The guest-module contract behind Opening Book: a small WebAssembly ABI for contributing new opening moves. Exports, calling convention, the host crypto menu, resource limits, and a complete worked example." />
+<meta property="og:title" content="Write a module — Opening Book" />
+<meta property="og:description" content="A repertoire only grows if other people can add to it. This is the contract: four exports, one calling convention, and a signed artifact." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css" />
+<style>
+  /* Page-local components: the reference tables and callouts this chapter needs and the
+     narrative page does not. Everything else comes from the shared sheet. */
+  .subnav{position:sticky; top:0; z-index:10; -webkit-backdrop-filter:blur(9px); backdrop-filter:blur(9px);
+    background:rgba(9,10,14,.82); border-bottom:1px solid var(--line)}
+  .subnav .in{max-width:920px; margin:0 auto; padding:13px 30px; display:flex; align-items:center; gap:22px;
+    font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase}
+  .subnav a{color:var(--dim); border:0}
+  .subnav a:hover{color:var(--signal)}
+  .subnav .home{color:var(--brass); margin-right:auto}
+  .subnav .home:hover{color:var(--brass-hi)}
+  /* Six links in a flex row overflow a phone. Scroll them rather than wrapping: wrapping doubles
+     the sticky bar's height and eats the viewport on exactly the screens that have least of it.
+     `margin-right:auto` on .home is dropped here — with scrolling it would push the rest off. */
+  @media (max-width:700px){
+    .subnav .in{overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; gap:18px}
+    .subnav .in::-webkit-scrollbar{display:none}
+    .subnav a{white-space:nowrap}
+    .subnav .home{margin-right:4px}
+  }
+
+  table.abi{width:100%; border-collapse:collapse; margin:26px 0; font-size:14.5px}
+  table.abi th{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--signal); text-align:left; font-weight:500;
+    padding:0 14px 11px 0; border-bottom:1px solid var(--line2); vertical-align:bottom}
+  table.abi td{padding:13px 14px 13px 0; border-bottom:1px solid var(--line); color:#bdb4a2;
+    vertical-align:top; line-height:1.55}
+  table.abi td:first-child{white-space:nowrap}
+  table.abi code{font-family:"JetBrains Mono",monospace; font-size:13px; color:var(--bone)}
+  table.abi .req{color:var(--brass); font-family:"JetBrains Mono",monospace; font-size:10.5px;
+    letter-spacing:.1em; text-transform:uppercase}
+  table.abi .opt{color:var(--faint); font-family:"JetBrains Mono",monospace; font-size:10.5px;
+    letter-spacing:.1em; text-transform:uppercase}
+
+  .note{border-left:2px solid var(--brass-dim); padding:4px 0 4px 22px; margin:26px 0;
+    color:#bdb4a2; font-size:16.5px}
+  .note b{color:var(--brass-hi); font-weight:500}
+  .warn{border-left-color:var(--blood)}
+  .warn b{color:var(--blood)}
+
+  .steps{counter-reset:step; list-style:none; margin:26px 0}
+  /* Explicit rather than inheriting `li{position:relative}` from the shared sheet: the counter
+     below is absolutely positioned, and this page should not break if that rule moves. */
+  .steps li{counter-increment:step; position:relative; padding-left:44px; margin-bottom:17px}
+  .steps li::before{content:counter(step); position:absolute; left:0; top:-1px;
+    font-family:"JetBrains Mono",monospace; font-weight:700; font-size:13px; color:var(--brass);
+    width:26px; height:26px; display:grid; place-items:center;
+    border:1px solid var(--line2); border-radius:50%}
+
+  .trio{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:26px 0}
+  @media (max-width:760px){ .trio,.duo{grid-template-columns:1fr} }
+  @media (max-width:760px){ .spread{grid-template-columns:1fr; gap:22px} }
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="board"></div>
+<svg class="grain" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+
+<nav class="subnav">
+  <div class="in">
+    <a class="home" href="index.html">← Opening Book</a>
+    <a href="#contract">Contract</a>
+    <a href="#convention">Convention</a>
+    <a href="#menu">Host menu</a>
+    <a href="#example">Example</a>
+    <a href="#ship">Ship it</a>
+  </div>
+</nav>
+
+<header style="min-height:auto; padding:82px 0 58px">
+  <div class="wrap">
+    <div class="crest">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#c9a04c" stroke-width="1.3" aria-hidden="true">
+        <path d="M7 21h10M8.5 21c0-3 1-4 1-6M15.5 21c0-3-1-4-1-6M6 8h12M9 3h6l1 3H8zM7.5 8c0 4 2 5 4.5 5s4.5-1 4.5-5"/>
+      </svg>
+      <span class="wm">Opening Book</span>
+      <span class="eco">Guest module ABI</span>
+    </div>
+    <h1 style="font-size:clamp(38px,6.6vw,72px)">Write a <b>module</b>.</h1>
+    <p class="lede" style="max-width:38ch">A repertoire only grows if other people can add to it. This is the whole contract: <i>two required exports</i>, one calling convention, and a signed artifact.</p>
+  </div>
+</header>
+
+<section id="why">
+  <div class="spread">
+    <div class="rail"><span class="piece">♟</span><div class="no">01</div>
+      <div class="ann">A move is <span class="s">code</span>, shipped without shipping a client.</div></div>
+    <div class="body">
+      <h2>Why a module at <span class="it">all</span>.</h2>
+      <p class="lead">A new opening move usually means a new client release. Release cycles are measured in weeks; a censor's response is measured in days. That asymmetry is the whole problem.</p>
+      <p>So the moves live outside the binary. A module is a small WebAssembly program, signed, that the client loads at runtime and runs in a sandbox with no filesystem, no network, and no clock — it sees bytes and returns bytes. Adding a move is publishing an artifact, not shipping an app.</p>
+      <p>The sandbox is what makes accepting outside contributions tractable. A module cannot open a socket, read a file, or learn where it is running. The worst a hostile module can do is corrupt its own connection and burn its fuel budget.</p>
+    </div>
+  </div>
+</section>
+
+<section id="contract">
+  <div class="spread">
+    <div class="rail"><span class="piece">♜</span><div class="no">02</div>
+      <div class="ann">Two exports required. The rest declare what your module <span class="s">is</span>.</div></div>
+    <div class="body">
+      <h2>The <span class="it">contract</span>.</h2>
+      <p class="lead">The host discovers what a module does by looking at what it exports. There is no manifest and no registration call — the exports <em>are</em> the declaration.</p>
+
+      <table class="abi">
+        <tr><th>Export</th><th>Signature</th><th>Meaning</th></tr>
+        <tr><td><code>memory</code></td><td><span class="req">required</span></td>
+            <td>Your linear memory, exported so the host can write inputs into it and read outputs back out.</td></tr>
+        <tr><td><code>alloc</code></td><td><code>(i32) → i32</code> <span class="req">required</span></td>
+            <td>Hand back an address with room for <code>len</code> bytes. Called exactly once per invocation, before the work function.</td></tr>
+        <tr><td><code>transform_out</code></td><td><code>(i32,i32) → i64</code></td>
+            <td>Reshape bytes on their way out. Export this and you are a byte transform.</td></tr>
+        <tr><td><code>transform_in</code></td><td><code>(i32,i32) → i64</code></td>
+            <td>The inverse, on the way in.</td></tr>
+        <tr><td><code>compute_gambit</code></td><td><code>(i32,i32) → i64</code></td>
+            <td>Compute an opening from the per-connection context. Export this and you are a gambit module.</td></tr>
+        <tr><td><code>handshake_step</code></td><td><code>(i32,i32) → i64</code></td>
+            <td>Drive an interactive opening. Export this and the client runs a handshake before steady state.</td></tr>
+        <tr><td><code>init</code></td><td><code>(i32,i32) → ()</code> <span class="opt">optional</span></td>
+            <td>One-time setup with configuration bytes.</td></tr>
+        <tr><td><code>reset</code></td><td><code>() → ()</code> <span class="opt">optional</span></td>
+            <td>Called after every invocation once output has been copied out. Rewind your scratch arena here.</td></tr>
+      </table>
+
+      <p>The three work roles are independent, and a module may be exactly one of them. A pure byte transform exports <code>memory</code> and <code>alloc</code> — always required — plus the two <code>transform_*</code> functions, and no <em>other</em> work-role export; the client sees no <code>handshake_step</code>, so it dials straight through without asking. Nothing in the wiring knows which protocol you implement.</p>
+
+      <div class="note"><b>reset is not a destructor.</b> It rewinds the per-call scratch arena. Anything you keep in globals or at fixed addresses — keys derived during a handshake, a counter, negotiated state — survives across calls, and is exactly how a handshake module hands state to its own steady-state transforms.</div>
+    </div>
+  </div>
+</section>
+
+<section id="convention">
+  <div class="spread">
+    <div class="rail"><span class="piece">♝</span><div class="no">03</div>
+      <div class="ann">One convention for <span class="s">every</span> work function.</div></div>
+    <div class="body">
+      <h2>Bytes in, bytes <span class="it">out</span>.</h2>
+      <p class="lead">All four work functions share one calling convention, so learning it once covers everything.</p>
+
+      <ol class="steps">
+        <li>The host calls <code class="mono">alloc(len)</code> and gets back an address.</li>
+        <li>It writes <code class="mono">len</code> input bytes into your memory at that address.</li>
+        <li>It calls the work function with <code class="mono">(ptr, len)</code>.</li>
+        <li>You return <b>one packed <code class="mono">i64</code></b>: the output address in the high 32 bits, the output length in the low 32.</li>
+        <li>The host reads your output, then calls <code class="mono">reset</code> if you export it.</li>
+      </ol>
+
+      <div class="code"><span class="c">// returning a region — the only calling convention there is</span>
+<span class="k">let</span> out_ptr: u32 = ...;
+<span class="k">let</span> out_len: u32 = ...;
+((out_ptr <span class="k">as</span> u64) &lt;&lt; <span class="s">32</span>) | (out_len <span class="k">as</span> u64)</div>
+
+      <p>Two roles add a little structure on top. <code>handshake_step</code> receives the bytes that arrived from the peer — empty on the very first call, which is your chance to speak first — and frames its reply as a status byte followed by the wire bytes to send: <code class="mono">[status][outbound…]</code>, where a status of <code class="mono">1</code> means the handshake is finished. <code>compute_gambit</code> returns an encoded genome, which the client passes through without interpreting; only the engine that consumes it looks inside.</p>
+
+      <div class="note warn"><b>Your output must live somewhere the host can still read it.</b> Return a region inside your exported memory that stays valid until <code>reset</code>. Writing to a stack address that has already been popped is the most common way a first module fails, and it fails intermittently.</div>
+    </div>
+  </div>
+</section>
+
+<section id="menu">
+  <div class="spread">
+    <div class="rail"><span class="piece">♞</span><div class="no">04</div>
+      <div class="ann">Real crypto, run <span class="s">natively</span>, free of fuel.</div></div>
+    <div class="body">
+      <h2>What the host <span class="it">lends</span> you.</h2>
+      <p class="lead">A sandbox with no capabilities would force every module to ship its own crypto — slow, large, and its own supply of subtle bugs. So the host lends a fixed menu, imported from the <code>env</code> module.</p>
+
+      <table class="abi">
+        <tr><th>Import</th><th>What it gives you</th></tr>
+        <tr><td><code>host_rand</code></td><td>Cryptographic randomness.</td></tr>
+        <tr><td><code>host_hash</code></td><td>Hashing.</td></tr>
+        <tr><td><code>host_hkdf_extract</code><br /><code>host_hkdf_expand</code></td><td>Key derivation, both halves.</td></tr>
+        <tr><td><code>host_aead_seal</code><br /><code>host_aead_open</code></td><td>ChaCha20-Poly1305.</td></tr>
+        <tr><td><code>host_aes_gcm_seal</code><br /><code>host_aes_gcm_open</code></td><td>AES-GCM, for openings that must look like TLS.</td></tr>
+        <tr><td><code>host_chacha20</code></td><td>The raw stream cipher, when you need the keystream itself.</td></tr>
+        <tr><td><code>host_x25519_generate</code><br /><code>host_x25519_agree</code></td><td>Key exchange. Private keys stay host-side behind a handle — your module never sees the bytes.</td></tr>
+      </table>
+
+      <p>Two properties are worth knowing when you design around this. Host calls run as native code, so they cost you <em>no fuel</em> — a module that leans on the menu for its heavy lifting is both faster and further from the runaway limits than one that reimplements AES in the guest. And private keys are handles, not values: the module asks for an agreement and receives a result, so a bug in your code cannot leak a key it was never given.</p>
+    </div>
+  </div>
+</section>
+
+<section id="limits">
+  <div class="spread">
+    <div class="rail"><span class="piece">♛</span><div class="no">05</div>
+      <div class="ann">Every limit is a <span class="b">trap</span>, not a truncation.</div></div>
+    <div class="body">
+      <h2>The <span class="it">edges</span>.</h2>
+      <p class="lead">A module that misbehaves is stopped, never quietly accommodated. Knowing the edges up front means you size your buffers once and stop thinking about it.</p>
+
+      <table class="abi">
+        <tr><th>Limit</th><th>Value</th><th>Why</th></tr>
+        <tr><td>Input / output</td><td><code>1 MiB</code></td>
+            <td>The largest chunk the host will hand you, and the largest it will read back. Size your arena to match and no valid call is ever rejected.</td></tr>
+        <tr><td>Linear memory</td><td><code>16 MiB</code></td>
+            <td>Fuel bounds compute, not allocation — without a ceiling a module could grow memory until the host died, cheaply.</td></tr>
+        <tr><td>Table size</td><td><code>4096</code></td>
+            <td>The same bound for function references.</td></tr>
+        <tr><td>Fuel</td><td><code>5,000,000 + 1024/byte</code></td>
+            <td>Refilled per call, so bulk work is never penalized. It bounds a spin, not throughput.</td></tr>
+      </table>
+
+      <p>The fuel formula is deliberately generous: a legitimate transform of a full 1 MiB chunk has over a billion units to work with. It exists so that a module with an accidental infinite loop traps instead of hanging the connection forever.</p>
+    </div>
+  </div>
+</section>
+
+<section id="example">
+  <div class="spread">
+    <div class="rail"><span class="piece">♟</span><div class="no">06</div>
+      <div class="ann">Eighty-three lines, <span class="s">no_std</span>, no dependencies.</div></div>
+    <div class="body">
+      <h2>The shape of a <span class="it">real one</span>.</h2>
+      <p class="lead">The reference module XORs every byte with a constant — deliberately trivial as a transform, and the same shape a serious module has. The excerpts below are <strong>excerpts</strong>, not a compilable listing; the complete module is about eighty lines of <code>no_std</code> Rust with no dependencies.</p>
+
+      <div class="code"><span class="c">// The scratch arena, sized to the host's 1 MiB maximum so no valid</span>
+<span class="c">// call is ever rejected. `alloc` hands the host this one buffer.</span>
+<span class="k">const</span> ARENA: usize = <span class="s">1</span> &lt;&lt; <span class="s">20</span>;
+<span class="k">static mut</span> MEM: [u8; ARENA] = [<span class="s">0</span>; ARENA];
+
+<span class="c">// Trap on a bad request rather than let pointer math corrupt memory.</span>
+<span class="k">#[no_mangle]</span>
+<span class="k">pub extern</span> <span class="s">"C"</span> <span class="k">fn</span> alloc(len: i32) -&gt; i32 {
+    <span class="k">if</span> len &lt; <span class="s">0</span> || len <span class="k">as</span> usize &gt; ARENA {
+        core::arch::wasm32::unreachable()
+    }
+    <span class="c">// … return the arena's address in linear memory</span>
+}</div>
+      <p class="dim" style="font-size:15px;margin-top:-8px">Abridged — the elided bodies, the <code>memory</code> export and the two transforms are in the module's source.</p>
+
+      <p>Three decisions in that fragment are worth copying. The arena is <b>static, not stack</b>, so the region you return is still valid when the host reads it. <code>alloc</code> <b>traps rather than clamps</b> on an impossible request — a truncated buffer would corrupt a connection silently, and silence is the enemy. And the module is <code>no_std</code> with no dependencies, which is why the compiled artifact is measured in kilobytes.</p>
+
+      <p>The transform itself is the boring part: read <code class="mono">len</code> bytes at <code class="mono">ptr</code>, XOR each with the key, write them back, return the packed region. Because XOR is involutive, the same code serves as both <code>transform_out</code> and <code>transform_in</code> — a real module would have two different functions here.</p>
+
+      <div class="note"><b>Start from it.</b> The reference module is the smallest thing that exercises the full production path: it is compiled, signed, loaded, and round-tripped by the client's own test suite, through exactly the code path a shipped module takes. If your module has the same skeleton, the plumbing is already proven.</div>
+    </div>
+  </div>
+</section>
+
+<section id="ship">
+  <div class="spread">
+    <div class="rail"><span class="piece">♚</span><div class="no">07</div>
+      <div class="ann">Unsigned is <span class="b">unloadable</span>.</div></div>
+    <div class="body">
+      <h2>Sign it, then <span class="it">ship it</span>.</h2>
+      <p class="lead">Runtime-loadable code is a supply chain. The client will not run a module it cannot verify, and there is no flag to turn that off.</p>
+
+      <ol class="steps">
+        <li>Compile to <code class="mono">wasm32-unknown-unknown</code>, release.</li>
+        <li>Sign the module — the signature covers the name, the version, <em>and</em> the bytes together, so an artifact cannot be renamed, nor have its version relabelled, without breaking verification.</li>
+        <li>The result is a single self-describing artifact the client loads by path or by fetch.</li>
+      </ol>
+
+      <p>The build script does all three, and it is the only step in the whole project that needs the wasm toolchain — ordinary builds and CI consume the committed artifacts rather than rebuilding them.</p>
+      <p>Development artifacts are signed with a development key that ships in the repo, so you can iterate without touching anything sensitive. That key is <em>only</em> a fallback for builds with no production key pinned: a release pins its own verification key, the production private half never leaves its vault, and CI is public-key only. So a module signed with the repo key is loadable by a development build and by nothing you would ship — which is the property that makes shipping the dev key in the open safe.</p>
+
+      <div class="note warn"><b>Signing alone does not stop a downgrade.</b> An older artifact was validly signed, so it still verifies — replaying one is a real attack, and no signature scheme prevents it by itself. The client therefore keeps an <b>anti-rollback floor</b>: the highest version it has installed, checked before the module is compiled, so an artifact carrying a lower version is refused even though its signature is perfectly good. What this asks of you is only that versions increase and that a number is never reused for different bytes.</div>
+    </div>
+  </div>
+</section>
+
+<section id="contribute">
+  <div class="spread">
+    <div class="rail"><span class="piece">♦</span><div class="no">08</div>
+      <div class="ann">The interesting question is <span class="s">what to write</span>.</div></div>
+    <div class="body">
+      <h2>What's worth <span class="it">writing</span>.</h2>
+      <p class="lead">The contract above is small on purpose. The hard part was never the ABI — it is knowing which opening is worth playing.</p>
+      <p>The most useful contributions tend not to be clever ciphers. They are openings that resemble something a censor cannot afford to block, transports that already have a large innocent population, and moves that fail in a boring way when they fail. A module that works beautifully until it is blocked, and then looks obviously anomalous, has made things worse than one that never worked.</p>
+      <p>If you are exploring a direction, the shape of the discussion is more valuable than a finished artifact — what population you are hiding in, what a censor would have to give up to block it, and how you would know it stopped working.</p>
+      <div class="links" style="margin-top:32px">
+        <a href="https://github.com/getlantern">github.com/getlantern</a>
+        <a href="index.html">Read the approach</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Part of <a href="index.html">Opening Book</a> — an approach to internet censorship circumvention from the team behind <a href="https://lantern.io">Lantern</a>.</p>
+    <p class="fine">This page documents the module <em>contract</em>: what the host guarantees and what a guest must provide. It deliberately contains no live strategies. The repertoire is meant to be polymorphic and ever-changing, and publishing the moves currently on the board would defeat the point of having a book.</p>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:.12, rootMargin:'0px 0px -7% 0px'});
+  document.querySelectorAll('.rise').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
