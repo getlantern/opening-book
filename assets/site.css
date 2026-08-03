@@ -125,6 +125,61 @@ h1 .vi{color:var(--violet)}
   font-weight:700}
 .btn.pri:hover{background:linear-gradient(180deg,#ffa768,#ff8a3d); color:#1a0d04}
 
+/* ---- the hero: text beside the breach ----
+   Two columns wide, stacked narrow. The graphic comes second in the DOM so a screen reader and a
+   no-CSS render both reach the headline first. */
+.hero{display:grid; grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr); gap:44px;
+  align-items:center; max-width:1080px; margin:0 auto; padding:0 30px}
+/* The headline shares its row with the graphic now, so it cannot take the full-width
+   display size without wrapping into four ragged lines. */
+.hero h1{font-size:clamp(33px,4.5vw,60px)}
+@media (max-width:940px){
+  .hero{grid-template-columns:1fr; gap:16px}
+  .breach{max-width:440px; margin-inline:auto}
+}
+
+/* ---- THE BREACH ----
+   A wall seen head-on, torn open, lit from behind. Inline SVG so it themes from the same palette
+   as everything else and stays sharp at any size; the motion is CSS so it can be switched off
+   wholesale for prefers-reduced-motion.
+
+   Layer order is load-bearing and not obvious: the glow sits BEHIND the wall so it reads as light
+   from the far side, and the rays sit IN FRONT so the light appears to spill toward the viewer.
+   Swap those two and the whole thing flattens into a sticker. */
+.breach{position:relative; width:100%}
+/* Clipped, not visible: the rays are masked to fade before the frame, so nothing needs to
+   paint outside — and painting outside made the element overflow the viewport on a phone. */
+.breach-svg{display:block; width:100%; height:auto; overflow:hidden}
+
+.b-glow{transform-origin:296px 282px; animation:b-breathe 7s ease-in-out infinite}
+.b-core{transform-origin:296px 282px; animation:b-flare 7s ease-in-out infinite}
+.b-rays{transform-origin:296px 282px; animation:b-turn 62s linear infinite, b-shimmer 7s ease-in-out infinite}
+@keyframes b-breathe{0%,100%{transform:scale(1);opacity:.92}50%{transform:scale(1.055);opacity:1}}
+@keyframes b-flare  {0%,100%{transform:scale(.97);opacity:.85}50%{transform:scale(1.05);opacity:1}}
+@keyframes b-turn   {to{transform:rotate(360deg)}}
+@keyframes b-shimmer{0%,100%{opacity:.72}50%{opacity:1}}
+
+/* Two bricks knocked loose. Small amplitude on purpose — masonry that visibly wobbles reads as
+   a cartoon. */
+.b-debris .d0{animation:b-drift0 9s ease-in-out infinite}
+.b-debris .d1{animation:b-drift1 11s ease-in-out infinite}
+@keyframes b-drift0{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(4px,-3px) rotate(2.5deg)}}
+@keyframes b-drift1{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-3px,4px) rotate(-2deg)}}
+
+/* Packets escaping through the gap: out of the light, past the wall, away. Three paths and
+   staggered delays so the stream never pulses in lockstep. */
+.b-stream .p{offset-path:path("M296 282 L560 214"); offset-rotate:0deg; opacity:0}
+.b-stream .p3,.b-stream .p4{offset-path:path("M296 282 L566 306")}
+.b-stream .p5,.b-stream .p6{offset-path:path("M296 282 L548 402")}
+.b-stream .p0{animation:b-esc 3.4s linear infinite}
+.b-stream .p1{animation:b-esc 3.4s linear .49s infinite}
+.b-stream .p2{animation:b-esc 3.4s linear .97s infinite}
+.b-stream .p3{animation:b-esc 4.1s linear .30s infinite}
+.b-stream .p4{animation:b-esc 4.1s linear 1.4s infinite}
+.b-stream .p5{animation:b-esc 3.8s linear .80s infinite}
+.b-stream .p6{animation:b-esc 3.8s linear 2.1s infinite}
+@keyframes b-esc{0%{offset-distance:0%;opacity:0}13%{opacity:1}83%{opacity:1}100%{offset-distance:100%;opacity:0}}
+
 /* ---- the adaptive motif: the same payload, re-framed on every pass ----
    Twelve cells; four of them widen a gap in a staggered loop, so the split point walks along
    the string. This is the polymorphism claim rendered literally — nothing about the bytes
@@ -456,6 +511,14 @@ footer .fine em{color:var(--dim)}
   html{scroll-behavior:auto}
   .rise{opacity:1;transform:none;transition:none}
   .cells i,.cells i::after,.sweep::after{animation:none!important}
+  /* The breach animates continuously — it has to stop outright, not merely not replay.
+     The graphic still reads correctly frozen: the light, the ragged edge and the escaped
+     packets are all static geometry. The packets are parked mid-flight so the stream is
+     still legible rather than collapsing to a point at the origin. */
+  .b-glow,.b-core,.b-rays,.b-debris rect,.b-stream .p{animation:none!important}
+  .b-stream .p{opacity:1; offset-distance:58%}
+  .b-stream .p1{offset-distance:34%} .b-stream .p2{offset-distance:82%}
+  .b-stream .p4{offset-distance:40%} .b-stream .p6{offset-distance:70%}
   .cells i.c1,.cells i.c2,.cells i.c3{margin-right:1.55em; border-color:var(--ember); color:var(--ember-hi)}
   /* Show the blades statically so the motif still reads as 'cut' without moving. */
   .cells i.c1::after,.cells i.c2::after,.cells i.c3::after{opacity:1; transform:scaleY(1)}
