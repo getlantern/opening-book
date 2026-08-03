@@ -63,6 +63,7 @@
     <a href="#spine">The spine</a>
     <a href="#stacks">Two stacks</a>
     <a href="#verdicts">Verdicts</a>
+    <a href="#slot">The slot</a>
     <a href="#split">The split</a>
     <a href="#platforms">Platforms</a>
   </div>
@@ -210,7 +211,7 @@
       <h2 class="rise">The transport <span class="it">slot</span>.</h2>
       <p class="rise">Everything below the router is one interface: <em>dial this target, give me back a stream</em>. That narrowness is what makes the repertoire possible — a new wire protocol is a new implementation of one trait, not a change to the client.</p>
       <div class="code rise"><span class="c">// the entire contract every wire protocol implements</span>
-<span class="k">async fn</span> dial(&<span class="k">self</span>, target: SocketAddr) -> Result&lt;BoxedStream&gt;;
+<span class="k">async fn</span> dial(&amp;<span class="k">self</span>, target: SocketAddr) -&gt; Result&lt;BoxedStream&gt;;
 <span class="c">// …plus an opt-in variant that carries a *domain* to the exit,
 //    so the exit resolves and the client never has to.</span></div>
       <p class="rise">Behind it today: a plain tunnel, <strong>AnyTLS</strong>, <strong>Shadowsocks</strong>, <strong>Hysteria2</strong>, a <strong>DNS tunnel</strong> for networks where little else escapes, a domain-fronted <strong>meek</strong> path, and the proxyless direct path. They are dialed through a pool that races and scores them, so a protocol that stops working stops being chosen.</p>

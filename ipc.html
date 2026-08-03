@@ -33,10 +33,13 @@
     text-transform:uppercase; font-weight:500; margin-bottom:13px}
   .ledger .yes h3{color:var(--signal)}
   .ledger .no h3{color:var(--blood)}
-  .ledger ul{margin:0}
+  /* `list-style` and the marker's `position` already come from the shared `ul`/`li::before`
+     rules; both are restated here for the same reason `.steps` does it — a chapter should not
+     break if those shared rules move. */
+  .ledger ul{margin:0; list-style:none}
   .ledger li{font-size:15px; line-height:1.5; padding-left:20px; margin-bottom:9px; color:#bdb4a2}
   .ledger li:last-child{margin-bottom:0}
-  .ledger li::before{content:"·"; font-size:17px; left:4px; top:-2px}
+  .ledger li::before{content:"·"; position:absolute; font-size:17px; left:4px; top:-2px}
   @media (max-width:640px){
     .ledger{grid-template-columns:1fr}
     .ledger .yes{border-right:0; border-bottom:1px solid var(--line)}
