@@ -7,10 +7,13 @@
 <meta name="description" content="How a raw IP packet becomes a shaped opening on the wire: the tun, the netstack, the flow, the four verdicts, the transport slot — and the one line the architecture never crosses." />
 <meta property="og:title" content="The spine — Opening Book" />
 <meta property="og:description" content="A packet is not a conversation. Six stages turn one into the other — and exactly one of them is allowed to be clever." />
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/site.css" />
+<script src="assets/site.js" defer></script>
 <style>
   /* Page-local: the stage diagram. Everything else comes from the shared sheet. */
   .spine{margin:36px 0 8px}
@@ -56,9 +59,26 @@
 <div class="bg"></div><div class="board"></div>
 <svg class="grain" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
 
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M13.4 2 4 13.6h6.2L9.8 22l9.6-11.8h-6.3z" fill="#ff8a3d"/>
+      </svg>
+      <b>Spark</b><span>getlantern</span>
+    </a>
+    <a class="nl" href="index.html#adapt">How it adapts</a>
+    <a class="nl" href="index.html#path">Data path</a>
+    <a class="nl" href="index.html#transports">Transports</a>
+    <a class="nl" href="index.html#privacy">Privacy</a>
+    <a class="nl" href="index.html#docs">Docs</a>
+    <a class="nl" href="index.html#status">Status</a>
+  </div>
+</nav>
+
 <nav class="subnav">
   <div class="in">
-    <a class="home" href="index.html">← Opening Book</a>
+    <a class="home" href="index.html">← Spark</a>
     <a href="#gap">The gap</a>
     <a href="#spine">The spine</a>
     <a href="#stacks">Two stacks</a>
@@ -274,9 +294,9 @@
       <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="1.2" y="1.2" width="37.6" height="37.6" rx="8" stroke="#c9a04c" stroke-opacity=".4"/><path d="M13 28.5h14M14.5 28.5c0-7.5 1.8-9.2 1.8-13.2 0-2.2-1.3-3.3-1.3-3.3h6.9s-1.3 1.1-1.3 3.3c0 4 1.8 5.7 1.8 13.2" stroke="#c9a04c" stroke-opacity=".7" stroke-width="1.6" stroke-linejoin="round"/></svg>
       <span class="wm">Opening&nbsp;Book</span>
     </div>
-    <p>The architecture chapter. Read <a href="index.html">the theory</a> for why the opening is the whole game, or <a href="modules.html">the module contract</a> to add a move to the book.</p>
+    <p>The architecture chapter. Read <a href="book.html">the theory</a> for why the opening is the whole game, or <a href="modules.html">the module contract</a> to add a move to the book.</p>
     <div class="links">
-      <a href="index.html">Opening Book</a>
+      <a href="book.html">Opening Book</a>
       <a href="dns.html">Five kinds of DNS</a>
       <a href="ipc.html">The control plane</a>
       <a href="modules.html">Write a module</a>
@@ -286,12 +306,5 @@
   </div>
 </footer>
 
-<script>
-  const io = new IntersectionObserver((es)=>{
-    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, {threshold:.12, rootMargin:'0px 0px -7% 0px'});
-  document.querySelectorAll('.rise').forEach(el=>io.observe(el));
-  requestAnimationFrame(()=>document.querySelectorAll('header .rise').forEach(el=>el.classList.add('in')));
-</script>
 </body>
 </html>

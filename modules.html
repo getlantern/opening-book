@@ -7,18 +7,38 @@
 <meta name="description" content="The guest-module contract behind Opening Book: a small WebAssembly ABI for contributing new opening moves. Exports, calling convention, the host crypto menu, resource limits, and a complete worked example." />
 <meta property="og:title" content="Write a module — Opening Book" />
 <meta property="og:description" content="A repertoire only grows if other people can add to it. This is the contract: four exports, one calling convention, and a signed artifact." />
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/site.css" />
+<script src="assets/site.js" defer></script>
 </head>
 <body>
 <div class="bg"></div><div class="board"></div>
 <svg class="grain" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
 
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M13.4 2 4 13.6h6.2L9.8 22l9.6-11.8h-6.3z" fill="#ff8a3d"/>
+      </svg>
+      <b>Spark</b><span>getlantern</span>
+    </a>
+    <a class="nl" href="index.html#adapt">How it adapts</a>
+    <a class="nl" href="index.html#path">Data path</a>
+    <a class="nl" href="index.html#transports">Transports</a>
+    <a class="nl" href="index.html#privacy">Privacy</a>
+    <a class="nl" href="index.html#docs">Docs</a>
+    <a class="nl" href="index.html#status">Status</a>
+  </div>
+</nav>
+
 <nav class="subnav">
   <div class="in">
-    <a class="home" href="index.html">← Opening Book</a>
+    <a class="home" href="index.html">← Spark</a>
     <a href="#why">Why</a>
     <a href="#contract">Contract</a>
     <a href="#convention">Convention</a>
@@ -234,7 +254,7 @@
       <p>If you are exploring a direction, the shape of the discussion is more valuable than a finished artifact — what population you are hiding in, what a censor would have to give up to block it, and how you would know it stopped working.</p>
       <div class="links" style="margin-top:32px">
         <a href="https://github.com/getlantern">github.com/getlantern</a>
-        <a href="index.html">Read the approach</a>
+        <a href="book.html">Read the approach</a>
       </div>
     </div>
   </div>
@@ -242,9 +262,9 @@
 
 <footer>
   <div class="wrap">
-    <p>Part of <a href="index.html">Opening Book</a> — an approach to internet censorship circumvention from the team behind <a href="https://lantern.io">Lantern</a>. See also <a href="architecture.html">the architecture</a>: where in the client a module actually runs.</p>
+    <p>Part of <a href="book.html">Opening Book</a> — an approach to internet censorship circumvention from the team behind <a href="https://lantern.io">Lantern</a>. See also <a href="architecture.html">the architecture</a>: where in the client a module actually runs.</p>
     <div class="links">
-      <a href="index.html">Opening Book</a>
+      <a href="book.html">Opening Book</a>
       <a href="architecture.html">The architecture</a>
       <a href="dns.html">Five kinds of DNS</a>
       <a href="ipc.html">The control plane</a>
@@ -254,11 +274,5 @@
   </div>
 </footer>
 
-<script>
-  const io = new IntersectionObserver((es)=>{
-    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, {threshold:.12, rootMargin:'0px 0px -7% 0px'});
-  document.querySelectorAll('.rise').forEach(el=>io.observe(el));
-</script>
 </body>
 </html>

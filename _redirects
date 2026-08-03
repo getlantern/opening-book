@@ -1,0 +1,10 @@
+# index.html became the Spark landing page; the Opening Book narrative moved to /book.
+# Anyone arriving from the old GitHub Pages site lands on the page they meant rather than a 404
+# or, worse, silently on a different document.
+/opening-book/            /       301
+/opening-book/index.html  /book   301
+/opening-book/*           /:splat 301
+
+# No extensionless aliases here on purpose. Cloudflare Pages already serves /foo.html at /foo and
+# 308-redirects the .html form to it. Adding our own /foo -> /foo.html rewrite fights that and
+# produces a redirect loop — which it did on the first deploy.

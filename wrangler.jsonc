@@ -1,0 +1,14 @@
+{
+  // Cloudflare Pages config for the Spark site.
+  //
+  // NOTE: Pages projects reject "account_id" in this file, so the account must come from the
+  // environment. This login can see two accounts and a non-interactive deploy cannot choose,
+  // so CLOUDFLARE_ACCOUNT_ID has to be set. ./deploy.sh does it for you and pins the Lantern
+  // org account (Brave New Software Project, Inc.) rather than the personal one — the wrong
+  // choice would put a company site under an individual's billing and access control.
+  //
+  // Deploy:  ./deploy.sh
+  "name": "spark",
+  "pages_build_output_dir": "dist",
+  "compatibility_date": "2026-08-03"
+}
