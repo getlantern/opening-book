@@ -1,0 +1,20 @@
+# Static, self-contained apart from Google Fonts, so the policy can be tight.
+#
+# `script-src 'self'` with NO 'unsafe-inline' is the load-bearing line: there is no inline
+# <script> anywhere on the site (the reveal logic lives in assets/site.js precisely so this
+# can hold), which means an injected inline script does not execute.
+#
+# `style-src` does allow 'unsafe-inline', and that is a deliberate, narrower concession: the
+# pages use inline style attributes for animation delays and page-local <style> blocks for
+# per-chapter components. Inline CSS is a far weaker vector than inline JS, and removing it
+# would mean generating a class for every stagger value. Revisit if the site ever grows a
+# build step that can hash or nonce them.
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'
+
+/assets/*
+  Cache-Control: public, max-age=3600

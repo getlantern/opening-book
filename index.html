@@ -3,193 +3,458 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Opening Book — opening theory for the open internet</title>
-<meta name="description" content="Opening Book: an approach to internet censorship circumvention built on one fact — censors decide in the opening of the flow. An evolving, portable repertoire of opening moves — across TLS, QUIC, DNS, WebRTC, HTTP and more — anchored at genuine traffic and discovered against the live network." />
-<meta property="og:title" content="Opening Book" />
-<meta property="og:description" content="Censorship decides in the opening of the flow. So we made the opening the whole game — an evolving repertoire of opening moves for getting through." />
+<title>Spark — an adaptive tunnel for hostile networks</title>
+<meta name="description" content="Spark is a from-scratch, multi-protocol VPN tunnel in Rust. Nine transports, opening handshakes searched for rather than hand-written, per-flow routing that only tunnels what has to be tunnelled, and a release binary under 3 MB." />
+<meta property="og:title" content="Spark — an adaptive tunnel for hostile networks" />
+<meta property="og:description" content="Censors classify a connection from its opening handshake. Spark makes that opening the thing to get right, with a repertoire searched for against the live network rather than written by hand." />
+<meta name="theme-color" content="#08090d" />
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/site.css" />
+<script src="assets/site.js" defer></script>
 </head>
 <body>
 <div class="bg"></div><div class="board"></div>
-<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<svg class="grain" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute" xmlns="http://www.w3.org/2000/svg"><defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0 0 L10 5 L0 10 z" fill="#5c5b56"/>
+  </marker>
+  <marker id="arv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0 0 L10 5 L0 10 z" fill="#9d7bff"/>
+  </marker>
+</defs></svg>
 
-<header>
-  <div class="wrap">
-    <div class="crest rise">
-      <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-        <rect x="1.2" y="1.2" width="37.6" height="37.6" rx="8" stroke="#c9a04c" stroke-opacity=".55"/>
-        <path d="M13 28.5h14M14.5 28.5c0-7.5 1.8-9.2 1.8-13.2 0-2.2-1.3-3.3-1.3-3.3h6.9s-1.3 1.1-1.3 3.3c0 4 1.8 5.7 1.8 13.2" stroke="#c9a04c" stroke-width="1.6" stroke-linejoin="round"/>
-        <circle cx="20" cy="9.4" r="2.3" fill="#5ccbac"/>
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M13.4 2 4 13.6h6.2L9.8 22l9.6-11.8h-6.3z" fill="#ff8a3d"/>
       </svg>
-      <span class="wm">Opening&nbsp;Book</span>
-      <span class="eco">getlantern · circumvention</span>
-    </div>
-    <h1 class="rise" style="transition-delay:.08s">Censorship decides in the <span class="br">opening of the flow</span>.</h1>
-    <p class="lede rise" style="transition-delay:.18s">So we made the opening the whole game — an <i>evolving repertoire</i> of opening moves for getting through.</p>
+      <b>Spark</b><span>getlantern</span>
+    </a>
+    <a class="nl" href="#adapt">How it adapts</a>
+    <a class="nl" href="#path">Data path</a>
+    <a class="nl" href="#transports">Transports</a>
+    <a class="nl" href="#privacy">Privacy</a>
+    <a class="nl" href="#docs">Docs</a>
+    <a class="nl" href="#status">Status</a>
+  </div>
+</nav>
 
-    <div class="motif rise" style="transition-delay:.3s">
-      <div class="host cut" aria-label="the SNI hostname, fragmented across a segment boundary">
-        <span class="seg"><span class="cell">e</span><span class="cell">x</span><span class="cell">a</span><span class="cell">m</span><span class="cell">p</span></span>
-        <span class="gap"></span>
-        <span class="seg2"><span class="cell">l</span><span class="cell">e</span><span class="cell">.</span><span class="cell">c</span><span class="cell">o</span><span class="cell">m</span></span>
+<header class="tall">
+  <div class="wrap">
+    <span class="kicker rise">Multi-protocol tunnel · Rust · under 3 MB</span>
+    <h1 class="rise" style="transition-delay:.06s">A tunnel that <span class="br">changes shape</span><br>to get through.</h1>
+    <p class="lede rise" style="transition-delay:.14s">Censors classify a connection from its opening handshake, within the first few hundred bytes. Spark treats that opening as the thing to get right, and gives it a repertoire deep enough that it never has to reuse one.</p>
+
+    <div class="morph rise" style="transition-delay:.24s" aria-hidden="true">
+      <div class="sweep"></div>
+      <div class="cells">
+        <i>e</i><i>x</i><i>a</i><i class="c1">m</i><i>p</i><i>l</i><i class="c2">e</i><i>.</i><i>c</i><i class="c3">o</i><i>m</i>
       </div>
-      <div class="mcap"><b>↑ the name, split across the boundary</b> — so the inspector never reads it whole</div>
     </div>
-    <div class="scroll rise" style="transition-delay:.46s">↓ &nbsp; the theory</div>
+    <div class="mcap rise" style="transition-delay:.3s">
+      <b>↑ one hostname, cut in a different place on every connection</b><br>
+      a filter matching on the name never receives it in one piece
+    </div>
+
+    <div class="cta rise" style="transition-delay:.38s">
+      <a class="btn pri" href="#adapt">How it works</a>
+      <a class="btn" href="architecture.html">Architecture</a>
+      <a class="btn" href="modules.html">Write a module</a>
+    </div>
   </div>
 </header>
 
-<section>
-  <div class="spread">
-    <div class="rail rise"><span class="piece">♚</span><span class="no">01</span><div class="ann">the opening is <span class="b">observed</span>; the verdict comes early</div></div>
-    <div class="body">
-      <h2 class="rise">Classify, then <span class="it">treat</span>.</h2>
-      <p class="lead rise">A modern censor doesn't read your whole conversation. It glances at the opening of every connection — the TLS <span class="dim">ClientHello</span>, the server name, the JA3/JA4 fingerprint, the sizes and timing of the first few packets — files the flow under <em>TLS</em>, <em>QUIC</em>, <em>DNS</em>, <em>WebRTC</em>… applies a policy — and for many, that opening verdict is the whole story.</p>
-      <ul>
-        <li class="rise"><b>Looking like an allowed bucket beats looking like nothing.</b> Positive mimicry is the win.</li>
-        <li class="rise"><b>“Uncategorizable” is now its own — increasingly punished — bucket.</b> High-entropy, unclassifiable traffic gets throttled or dropped.</li>
-        <li class="rise"><b>So all the leverage is in the opening</b> — which is also, conveniently, cheap: a few hundred bytes, once per connection.</li>
-      </ul>
+<!-- ============================ THE PROBLEM ============================ -->
+<section id="problem">
+  <div class="shead rise">
+    <span class="eyebrow">01 — the problem</span>
+    <h2>The verdict arrives before you have said anything</h2>
+    <p>A modern filter does not read your traffic. It looks at how a connection opens: the handshake, the server name, the client fingerprint, the size and timing of the first few packets. From that it assigns a category and applies a policy. For most traffic the opening verdict is the whole interaction, and it happens inside a kilobyte.</p>
+  </div>
+  <div class="grid">
+    <div class="card rise">
+      <div class="top"><h3>Resembling something beats resembling nothing</h3></div>
+      <p>Traffic that looks like an ordinary allowed category gets through. Traffic that looks like no known category does not, regardless of what it actually contains.</p>
+    </div>
+    <div class="card rise" style="transition-delay:.06s">
+      <div class="top"><h3>Unclassifiable is now a category of its own</h3></div>
+      <p>High-entropy traffic with no recognisable shape gets throttled or dropped on principle. No operator ever has to decide what it was.</p>
+    </div>
+    <div class="card rise" style="transition-delay:.12s">
+      <div class="top"><h3>So the opening is where the budget goes</h3></div>
+      <p>Reshaping a whole stream is expensive and the cost scales with the traffic. Reshaping the opening costs a few hundred bytes once per connection, and the decision was made there anyway.</p>
     </div>
   </div>
 </section>
 
-<section>
-  <div class="spread">
-    <div class="rail rise"><span class="piece">♟</span><span class="no">02</span><div class="ann">a calculated opening, anchored at <span class="s">genuine Chrome</span></div></div>
-    <div class="body">
-      <h2 class="rise">The opening <span class="it">gambit</span>.</h2>
-      <p class="rise">A <strong>gambit</strong> shapes the opening — here, a TLS handshake, the worked example throughout: what goes in the ClientHello, how it's framed into records, and how those bytes are split across TCP segments and timed on the wire — fragmenting the hostname across a segment boundary, say, so a name-matching censor never sees it whole. The opening needn't be a ClientHello, though: the same move anchors a QUIC Initial, a DNS query, a WebRTC or HTTP opening just as well <span class="dim">(§08)</span>.</p>
-      <blockquote class="rise">Anchored at a real Chrome handshake — a fidelity floor, so you never look <em>worse</em> than genuine Chrome — then mutated outward to find a variant that slips past while a real server still accepts it.</blockquote>
+<!-- ============================ HOW IT ADAPTS ============================ -->
+<section id="adapt">
+  <div class="shead rise">
+    <span class="eyebrow">02 — the loop</span>
+    <h2>The openings are searched for, not written</h2>
+    <p>An opening is expressed as data: a parameter set describing what goes into the handshake, how it is framed into records, and how those bytes are timed onto the wire. Every value is a delta against a real browser handshake, so a strategy is a few integers rather than a code change, and it can be scored, signed and shipped without a client release.</p>
+  </div>
+
+  <div class="fig rise">
+    <div class="box">
+      <svg viewBox="0 0 900 250" class="wide" role="img" aria-label="The discovery loop: propose, play, score, deploy, with results feeding back into propose.">
+        <g font-family="JetBrains Mono, monospace">
+          <rect x="4" y="34" width="196" height="92" rx="11" fill="#141722" stroke="#2a2e40"/>
+          <text x="22" y="61" font-size="11" fill="#9d7bff" letter-spacing="2">01 PROPOSE</text>
+          <text x="22" y="85" font-size="13" fill="#ece7dd">Mutate candidates</text>
+          <text x="22" y="105" font-size="10.5" fill="#8a8880">LLM + genetic search</text>
+
+          <rect x="236" y="34" width="196" height="92" rx="11" fill="#141722" stroke="#2a2e40"/>
+          <text x="254" y="61" font-size="11" fill="#5fd4b4" letter-spacing="2">02 PLAY</text>
+          <text x="254" y="85" font-size="13" fill="#ece7dd">Execute the genome</text>
+          <text x="254" y="105" font-size="10.5" fill="#8a8880">two engines, one spec</text>
+
+          <rect x="468" y="34" width="196" height="92" rx="11" fill="#141722" stroke="#2a2e40"/>
+          <text x="486" y="61" font-size="11" fill="#ff8a3d" letter-spacing="2">03 SCORE</text>
+          <text x="486" y="85" font-size="13" fill="#ece7dd">Did it arrive?</text>
+          <text x="486" y="105" font-size="10.5" fill="#8a8880">the server is the oracle</text>
+
+          <rect x="700" y="34" width="196" height="92" rx="11" fill="#141722" stroke="#2a2e40"/>
+          <text x="718" y="61" font-size="11" fill="#8a8880" letter-spacing="2">04 DEPLOY</text>
+          <text x="718" y="85" font-size="13" fill="#ece7dd">Sign and roll out</text>
+          <text x="718" y="105" font-size="10.5" fill="#8a8880">parameters, not binaries</text>
+
+          <line x1="204" y1="80" x2="230" y2="80" stroke="#5c5b56" stroke-width="1.4" marker-end="url(#ar)"/>
+          <line x1="436" y1="80" x2="462" y2="80" stroke="#5c5b56" stroke-width="1.4" marker-end="url(#ar)"/>
+          <line x1="668" y1="80" x2="694" y2="80" stroke="#5c5b56" stroke-width="1.4" marker-end="url(#ar)"/>
+
+          <path d="M798 130 L798 186 Q798 198 786 198 L114 198 Q102 198 102 186 L102 132"
+                fill="none" stroke="#9d7bff" stroke-width="1.4" stroke-dasharray="5 5" marker-end="url(#arv)"/>
+          <text x="450" y="222" font-size="10.5" fill="#9d7bff" text-anchor="middle" letter-spacing="1.5">WHAT REACHED A SERVER BECOMES THE NEXT GENERATION</text>
+        </g>
+      </svg>
+    </div>
+    <div class="figcap"><b>Status.</b> Stage 02 is built and verified. Stage 03 is partly built. Stages 01 and 04 run server-side and are not yet operating against the production fleet.</div>
+  </div>
+
+  <div class="loop">
+    <div class="lp rise">
+      <span class="n">01</span><h4>Propose</h4>
+      <p>A genetic search, guided by a language model grounded in a corpus of documented techniques, generates candidate openings and reasons about why the last attempt failed instead of mutating at random.</p>
+      <span class="st planned">Planned</span>
+    </div>
+    <div class="lp rise" style="transition-delay:.06s">
+      <span class="n">02</span><h4>Play</h4>
+      <p>Two independent engines execute the same parameter set: a lean BoringSSL path on the Rust client, and uTLS on the established Go fleet. One strategy therefore reaches both populations.</p>
+      <span class="st built">Built</span>
+    </div>
+    <div class="lp rise" style="transition-delay:.12s">
+      <span class="n">03</span><h4>Score</h4>
+      <p>A strategy counts as working when its traffic reaches a server. The arrival is itself the evidence, so there is no client telemetry to collect and nothing useful for a filter to forge.</p>
+      <span class="st wip">In progress</span>
+    </div>
+    <div class="lp rise" style="transition-delay:.18s">
+      <span class="n">04</span><h4>Deploy</h4>
+      <p>Winners ship as signed, versioned parameters. Because the censor keeps moving, the process has no end state, which is why it is a search rather than a configuration.</p>
+      <span class="st planned">Planned</span>
+    </div>
+  </div>
+
+  <div class="shead rise" style="margin-top:40px; margin-bottom:0">
+    <div class="note"><b>Where this actually stands.</b> The parameter format, both execution engines, the wire-shaping layer and the fingerprint anchoring are built. A Spark handshake currently matches live Chrome on JA4, verified in CI. The outer loop that generates and scores strategies at fleet scale is server-side and is not yet running against production, and this page marks it that way throughout.</div>
+    <p><a href="book.html">The full argument is in Opening Book →</a></p>
+  </div>
+</section>
+
+<!-- ============================ DATA PATH ============================ -->
+<section id="path">
+  <div class="shead rise">
+    <span class="eyebrow">03 — the data path</span>
+    <h2>From an IP packet to a shaped handshake</h2>
+    <p>Capturing a device's traffic yields raw IP packets. A transport needs a destination and a byte stream. Six stages close that gap, and each hands the next something narrower.</p>
+  </div>
+
+  <div class="fig rise">
+    <div class="box">
+      <svg viewBox="0 0 940 348" class="wide" role="img" aria-label="Data path: tun to netstack to flow to router; the router selects one of four verdicts; a proxied flow then goes to a transport and on to the shaped opening.">
+        <g font-family="JetBrains Mono, monospace">
+          <!-- row 1: the pipeline -->
+          <rect x="34" y="16" width="200" height="62" rx="10" fill="#141722" stroke="#2a2e40"/>
+          <text x="134" y="44" font-size="12" fill="#ece7dd" text-anchor="middle" letter-spacing="1.5">TUN</text>
+          <text x="134" y="63" font-size="9.5" fill="#8a8880" text-anchor="middle">IP packets</text>
+
+          <rect x="258" y="16" width="200" height="62" rx="10" fill="#141722" stroke="#2a2e40"/>
+          <text x="358" y="44" font-size="12" fill="#ece7dd" text-anchor="middle" letter-spacing="1.5">NETSTACK</text>
+          <text x="358" y="63" font-size="9.5" fill="#8a8880" text-anchor="middle">TCP terminated locally</text>
+
+          <rect x="482" y="16" width="200" height="62" rx="10" fill="#141722" stroke="#2a2e40"/>
+          <text x="582" y="44" font-size="12" fill="#ece7dd" text-anchor="middle" letter-spacing="1.5">FLOW</text>
+          <text x="582" y="63" font-size="9.5" fill="#8a8880" text-anchor="middle">stream + original intent</text>
+
+          <rect x="706" y="16" width="200" height="62" rx="10" fill="#191420" stroke="#a35622"/>
+          <text x="806" y="44" font-size="12" fill="#ffb072" text-anchor="middle" letter-spacing="1.5">ROUTER</text>
+          <text x="806" y="63" font-size="9.5" fill="#8a8880" text-anchor="middle">judges every flow</text>
+
+          <line x1="238" y1="47" x2="253" y2="47" stroke="#5c5b56" stroke-width="1.4" marker-end="url(#ar)"/>
+          <line x1="462" y1="47" x2="477" y2="47" stroke="#5c5b56" stroke-width="1.4" marker-end="url(#ar)"/>
+          <line x1="686" y1="47" x2="701" y2="47" stroke="#5c5b56" stroke-width="1.4" marker-end="url(#ar)"/>
+
+          <!-- trunk + bus down to the four verdicts -->
+          <path d="M806 78 L806 106" stroke="#a35622" stroke-width="1.4" fill="none"/>
+          <path d="M134 106 L806 106" stroke="#2a2e40" stroke-width="1.4" fill="none"/>
+          <path d="M134 106 L134 144" stroke="#5fd4b4" stroke-width="1.3" fill="none" marker-end="url(#ar)"/>
+          <path d="M358 106 L358 144" stroke="#5fd4b4" stroke-width="1.3" fill="none" marker-end="url(#ar)"/>
+          <path d="M582 106 L582 144" stroke="#9d7bff" stroke-width="1.3" fill="none" marker-end="url(#arv)"/>
+          <path d="M806 106 L806 144" stroke="#ff5c47" stroke-width="1.3" fill="none" marker-end="url(#ar)"/>
+
+          <!-- row 2: the four verdicts -->
+          <rect x="34" y="150" width="200" height="62" rx="10" fill="#0f1a17" stroke="#5fd4b433"/>
+          <text x="134" y="178" font-size="11" fill="#5fd4b4" text-anchor="middle" letter-spacing="1.6">PROXY</text>
+          <text x="134" y="196" font-size="9.5" fill="#8a8880" text-anchor="middle">through the pool, to an exit</text>
+
+          <rect x="258" y="150" width="200" height="62" rx="10" fill="#0f1a17" stroke="#5fd4b433"/>
+          <text x="358" y="178" font-size="11" fill="#5fd4b4" text-anchor="middle" letter-spacing="1.6">DIRECT</text>
+          <text x="358" y="196" font-size="9.5" fill="#8a8880" text-anchor="middle">protected socket, no tunnel</text>
+
+          <rect x="482" y="150" width="200" height="62" rx="10" fill="#16121f" stroke="#9d7bff2e"/>
+          <text x="582" y="178" font-size="11" fill="#9d7bff" text-anchor="middle" letter-spacing="1.6">PROXYLESS</text>
+          <text x="582" y="196" font-size="9.5" fill="#8a8880" text-anchor="middle">direct, but shaped</text>
+
+          <rect x="706" y="150" width="200" height="62" rx="10" fill="#1c1211" stroke="#ff5c4733"/>
+          <text x="806" y="178" font-size="11" fill="#ff5c47" text-anchor="middle" letter-spacing="1.6">REJECT</text>
+          <text x="806" y="196" font-size="9.5" fill="#8a8880" text-anchor="middle">ads, malware, phishing</text>
+
+          <!-- row 3: only a proxied flow continues -->
+          <path d="M134 212 L134 254" stroke="#5fd4b4" stroke-width="1.3" fill="none" marker-end="url(#ar)"/>
+          <rect x="34" y="260" width="200" height="62" rx="10" fill="#141722" stroke="#2a2e40"/>
+          <text x="134" y="288" font-size="12" fill="#ece7dd" text-anchor="middle" letter-spacing="1.5">TRANSPORT</text>
+          <text x="134" y="306" font-size="9.5" fill="#8a8880" text-anchor="middle">nine, behind one interface</text>
+
+          <line x1="238" y1="291" x2="253" y2="291" stroke="#5c5b56" stroke-width="1.4" marker-end="url(#ar)"/>
+          <rect x="258" y="260" width="200" height="62" rx="10" fill="#1a1208" stroke="#a35622"/>
+          <text x="358" y="288" font-size="12" fill="#ffb072" text-anchor="middle" letter-spacing="1.5">THE OPENING</text>
+          <text x="358" y="306" font-size="9.5" fill="#8a8880" text-anchor="middle">the only adaptive stage</text>
+
+          <!-- note, clear of every box -->
+          <line x1="490" y1="272" x2="906" y2="272" stroke="#1e2130" stroke-width="1"/>
+          <text x="490" y="294" font-size="9.5" fill="#5c5b56">Five of the six stages are deliberately unremarkable. A fault</text>
+          <text x="490" y="310" font-size="9.5" fill="#5c5b56">in any of them looks exactly like censorship from the outside,</text>
+          <text x="490" y="326" font-size="9.5" fill="#5c5b56">so each is proved on its own before they are wired together.</text>
+        </g>
+      </svg>
+    </div>
+    <div class="figcap"><b>Read left to right, then down.</b> The router's verdict decides whether a flow reaches a transport at all.</div>
+  </div>
+
+  <div class="grid two">
+    <div class="card rise">
+      <div class="top"><h3>Rules match names, packets carry addresses</h3><span class="st built">Built</span></div>
+      <p>By the time traffic reaches a tunnel the hostname is long gone. Spark answers DNS itself with synthetic addresses and recovers the name when the application connects to one, so routing decisions are made on what the user actually asked for.</p>
+    </div>
+    <div class="card rise" style="transition-delay:.06s">
+      <div class="top"><h3>Split tunnelling by application</h3><span class="st built">Built</span></div>
+      <p>Per-app inclusion and exclusion, for the banking app that refuses to run over a VPN and the printer that has to stay reachable on the local network.</p>
+    </div>
+    <div class="card rise" style="transition-delay:.12s">
+      <div class="top"><h3>Two netstacks</h3><span class="st wip">In progress</span></div>
+      <p>A userspace TCP/IP stack that behaves identically everywhere, and a kernel-TCP path that hands termination to the operating system. The kernel path ships but stays off by default on every platform, each for a documented reason.</p>
+    </div>
+    <div class="card rise" style="transition-delay:.18s">
+      <div class="top"><h3>A pool that scores itself</h3><span class="st built">Built</span></div>
+      <p>Transports are raced and ranked on the outcome of real flows rather than a synthetic probe, so a protocol that has started failing stops being selected without anyone intervening.</p>
     </div>
   </div>
 </section>
 
-<section>
-  <div class="spread">
-    <div class="rail rise"><span class="piece">♜</span><span class="no">03</span><div class="ann">parameters, not code — shippable in hours</div></div>
-    <div class="body">
-      <h2 class="rise">A gambit is <span class="it">data</span>.</h2>
-      <p class="rise">It's a portable parameter set across three layers — so a move can be reasoned about, mutated, signed, and delivered without shipping a new client.</p>
-      <div class="code rise"><span class="c">// a gambit — deltas over a genuine-Chrome anchor</span>
-anchor: <span class="s">chrome-137</span>
-clienthello: { <span class="k">extension_order</span>, <span class="k">grease</span>, <span class="k">padding</span>, <span class="k">ech</span>, … }   <span class="c">// what's in the hello</span>
-records:     { <span class="k">size_limit</span>, <span class="k">split</span> }                       <span class="c">// how it's framed</span>
-wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundary</span>, <span class="k">delay</span> }     <span class="c">// how it hits the wire</span>
-<span class="c">// signed · versioned · anti-rollback</span></div>
-      <p class="rise">The vocabulary is wide — which extensions, in what (seeded) order; whether to GREASE, pad the hello to a length, offer post-quantum, grease or really negotiate ECH; how the hello is cut into records; where the bytes split across TCP segments and how they're timed. Each knob is a delta over the anchor, so one integer can be the whole move. <span class="dim">(This is the TLS dialect's genome; a QUIC, DNS, WebRTC, or HTTP gambit carries the layers of <em>that</em> protocol's opening instead — §08.)</span></p>
-      <p class="rise dim">Most moves stay <strong style="color:var(--bone)">well-formed</strong> — a different-but-valid Chrome — and run anywhere. A tagged minority reach for byte-level tricks and are reviewed before they ship. <span style="color:var(--bone)">The genome can write more than any one engine plays today</span>: the lean client now runs the well-formed moves, the framing and timing layers, and — on stock BoringSSL, no fork — explicit extension and cipher order plus session-id injection; only the last byte-exact tricks (an exact seed, padding to a length, a raw hello) still wait for the Go engine and a dedicated byte-builder.</p>
+<!-- ============================ TRANSPORTS ============================ -->
+<section id="transports">
+  <div class="shead rise">
+    <span class="eyebrow">04 — the repertoire</span>
+    <h2>Nine transports behind one interface</h2>
+    <p>Everything below the router implements a single operation: dial a target, return a stream. A new wire protocol is therefore a new implementation rather than a change to the client, which is what lets the repertoire grow.</p>
+  </div>
+  <div class="rows">
+    <div class="row rise"><span class="nm">AnyTLS</span><span class="ds">Multiplexed streams inside a TLS session shaped to match a real browser, with a Chrome profile verified against live Chrome on JA4.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">Hysteria2</span><span class="ds">QUIC, with congestion control tuned for lossy and heavily shaped links. The right answer when a path is bad rather than blocked.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">Shadowsocks</span><span class="ds">The widely deployed AEAD protocol, for interoperating with existing server fleets.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">Proxyless</span><span class="ds">No proxy and no exit hop. Un-poisoned resolution plus a shaped handshake, which defeats the block on the direct path and consumes no server bandwidth.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">DNS tunnel</span><span class="ds">A clean-slate design for networks where little else escapes. Intentionally not wire-compatible with existing DNS tunnels, whose signatures are already well known.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">Fronted meek</span><span class="ds">Domain-fronted HTTPS over infrastructure that is costly to block wholesale.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">Samizdat</span><span class="ds">HTTP/2 multiplexing with session-id injection, sharing the same handshake-shaping layer as the others.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">WASM modules</span><span class="ds">Sandboxed guest transports delivered as signed, version-floored artifacts. A new obfuscation without a client release, and contributable from outside the team.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">BIP324</span><span class="ds">Bitcoin's encrypted transport as a carrier, for traffic that resembles participation in a network few operators want to be seen blocking.</span><span class="st built">Built</span></div>
+  </div>
+</section>
+
+<!-- ============================ PRIVACY ============================ -->
+<section id="privacy">
+  <div class="shead rise">
+    <span class="eyebrow">05 — posture</span>
+    <h2>Privilege, secrets and logs</h2>
+    <p>People run this on networks that are actively hostile and on devices that may be inspected. A log line can be evidence. The design treats that as a constraint on the software rather than as advice to the user.</p>
+  </div>
+
+  <div class="fig rise">
+    <div class="box">
+      <svg viewBox="0 0 900 224" class="mid" role="img" aria-label="Two processes: a privileged service owning the tunnel with all packet handling internal, and an unprivileged client, joined only by a control channel.">
+        <g font-family="JetBrains Mono, monospace">
+          <rect x="4" y="14" width="404" height="196" rx="13" fill="#12141d" stroke="#a35622" stroke-opacity=".55"/>
+          <text x="26" y="42" font-size="11" fill="#ff8a3d" letter-spacing="2">PRIVILEGED SERVICE</text>
+          <text x="26" y="61" font-size="9.5" fill="#8a8880">owns the tunnel device and the routing table</text>
+
+          <rect x="26" y="80" width="164" height="40" rx="8" fill="#141722" stroke="#2a2e40"/>
+          <text x="108" y="105" font-size="11" fill="#ece7dd" text-anchor="middle">netstack</text>
+          <rect x="222" y="80" width="164" height="40" rx="8" fill="#141722" stroke="#2a2e40"/>
+          <text x="304" y="105" font-size="11" fill="#ece7dd" text-anchor="middle">transports</text>
+
+          <path d="M192 100 L216 100" stroke="#5fd4b4" stroke-width="1.4" marker-end="url(#ar)"/>
+          <path d="M108 124 L108 154 Q108 164 118 164 L294 164 Q304 164 304 154 L304 124"
+                fill="none" stroke="#5fd4b4" stroke-width="1.4" stroke-dasharray="4 4"/>
+          <text x="206" y="190" font-size="10" fill="#5fd4b4" text-anchor="middle" letter-spacing="1.2">PACKETS NEVER LEAVE THIS PROCESS</text>
+
+          <rect x="600" y="14" width="296" height="196" rx="13" fill="#0f1118" stroke="#2a2e40"/>
+          <text x="622" y="42" font-size="11" fill="#8a8880" letter-spacing="2">UNPRIVILEGED CLIENT</text>
+          <text x="622" y="61" font-size="9.5" fill="#8a8880">the interface, with no special powers</text>
+          <rect x="622" y="80" width="252" height="90" rx="8" fill="#141722" stroke="#2a2e40"/>
+          <text x="748" y="118" font-size="11" fill="#ece7dd" text-anchor="middle">UI</text>
+          <text x="748" y="140" font-size="9.5" fill="#5c5b56" text-anchor="middle">may ask for status</text>
+          <text x="748" y="155" font-size="9.5" fill="#5c5b56" text-anchor="middle">may not read secrets</text>
+
+          <line x1="414" y1="96" x2="592" y2="96" stroke="#8a8880" stroke-width="1.3" marker-end="url(#ar)" marker-start="url(#ar)"/>
+          <text x="503" y="84" font-size="10" fill="#cdc8bf" text-anchor="middle" letter-spacing="1">CONTROL PLANE</text>
+          <text x="503" y="116" font-size="9.5" fill="#5c5b56" text-anchor="middle">commands · status · logs</text>
+          <text x="503" y="131" font-size="9.5" fill="#5c5b56" text-anchor="middle">a few messages a second</text>
+          <line x1="503" y1="144" x2="503" y2="192" stroke="#2a2e40" stroke-width="1" stroke-dasharray="3 4"/>
+          <text x="503" y="206" font-size="9" fill="#5c5b56" text-anchor="middle" letter-spacing="1">PRIVILEGE BOUNDARY</text>
+        </g>
+      </svg>
+    </div>
+    <div class="figcap"><b>One descriptor crosses, once.</b> On Linux the tunnel file descriptor can be handed over at startup so the code parsing hostile packets need not run as root. Per-packet data never crosses at all.</div>
+  </div>
+
+  <div class="grid">
+    <div class="card rise">
+      <div class="top"><h3>Destinations stay out of logs</h3><span class="st built">Built</span></div>
+      <p>Hostnames and destination addresses are redacted unless an explicit debug flag is set. This is enforced in the logging layer rather than left to whoever writes the next log statement.</p>
+    </div>
+    <div class="card rise" style="transition-delay:.06s">
+      <div class="top"><h3>Secrets travel one way</h3><span class="st built">Built</span></div>
+      <p>Credentials are stored by the privileged side and never sent back over the control channel. The interface can ask whether a profile is configured. It cannot ask what the key is.</p>
+    </div>
+    <div class="card rise" style="transition-delay:.12s">
+      <div class="top"><h3>The caller is authenticated</h3><span class="st built">Built</span></div>
+      <p>Connecting to the service is not the same as being allowed to command it. Peer credentials on Linux, a pipe security descriptor on Windows, a code-signing requirement on macOS.</p>
+    </div>
+    <div class="card rise" style="transition-delay:.06s">
+      <div class="top"><h3>Signed modules with a version floor</h3><span class="st built">Built</span></div>
+      <p>Guest transports carry a signature and a minimum version. Signing alone would still let an attacker serve an older module with a known weakness, so the floor is the part doing the work.</p>
+    </div>
+    <div class="card rise" style="transition-delay:.12s">
+      <div class="top"><h3>Under 3 MB, enforced</h3><span class="st built">Built</span></div>
+      <p>Downloaded on metered connections and sometimes passed between phones by hand. The budget also constrains the dependency tree, which is most of what keeps the attack surface reviewable.</p>
+    </div>
+    <div class="card rise" style="transition-delay:.18s">
+      <div class="top"><h3>No C in the default build</h3><span class="st built">Built</span></div>
+      <p>Pure Rust unless a feature is explicitly enabled. The two C dependencies that exist are gated off by default, so the shipping base build does not contain them.</p>
     </div>
   </div>
 </section>
 
-<section>
-  <div class="spread">
-    <div class="rail rise"><span class="piece">♞</span><span class="no">04</span><div class="ann">discover once, deploy across both</div></div>
-    <div class="body">
-      <h2 class="rise">One genome, <span class="it">two fleets</span>.</h2>
-      <p class="rise">Because a gambit is just parameters, the same one drives two different engines — and reaches two different client populations.</p>
-      <div class="duo">
-        <div class="chip rise"><span class="t">executor · rust</span><h3>BoringSSL</h3><p>Lean, iOS-capable, byte-exact Chrome — the engine on the lightweight client.</p></div>
-        <div class="chip rise" style="transition-delay:.08s"><span class="t">executor · go</span><h3>uTLS</h3><p>The full ClientHello toolbox, already deployed across the established fleet.</p></div>
-      </div>
-    </div>
+<!-- ============================ PLATFORMS ============================ -->
+<section id="platforms">
+  <div class="shead rise">
+    <span class="eyebrow">06 — reach</span>
+    <h2>Five platforms, one core</h2>
+    <p>Each operating system hands over packets differently and disagrees about who may ask for them. Only the first stage of the data path changes; the netstack, transports and routing are the same code everywhere.</p>
+  </div>
+  <div class="rows">
+    <div class="row rise"><span class="nm">Linux</span><span class="ds">Kernel tun behind a privileged service, with the option of passing the descriptor to a lower-privileged process.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">macOS</span><span class="ds">A system extension owns the device. Ships signed and notarised.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">Android</span><span class="ds">A genuine Linux tun behind VpnService, with upstream sockets explicitly protected so they do not route back into the tunnel.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">iOS</span><span class="ds">A packet-tunnel provider rather than a kernel device, under a memory ceiling that sizes every buffer in the system. Shipping to TestFlight and in regular use.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">Windows</span><span class="ds">WinTun, the named-pipe control transport and the service handler all build and package, and the whole workspace cross-compiles. Not yet run on a Windows host.</span><span class="st wip">In progress</span></div>
   </div>
 </section>
 
-<section>
-  <div class="spread">
-    <div class="rail rise"><span class="piece">♛</span><span class="no">05</span><div class="ann">the server is the <span class="s">oracle</span>; no client phone-home</div></div>
-    <div class="body">
-      <h2 class="rise">The book is <span class="it">discovered</span>.</h2>
-      <p class="rise">No one hand-writes the winning moves. A search — a genetic algorithm guided by a language model grounded in a corpus of known techniques — proposes and mutates gambits, reasoning about <em>why</em> the last attempt failed.</p>
-      <blockquote class="rise">A gambit works if its traffic reaches one of our servers. The server is the oracle — a connection that arrives <em>is</em> the proof.</blockquote>
-      <ul>
-        <li class="rise"><b>Fitness is server-side.</b> Candidates run head-to-head across comparable users; whichever reaches more, wins.</li>
-        <li class="rise"><b>Servers rotate.</b> So a blocked <em>address</em> looks different from a blocked <em>move</em> — search and fleet co-evolve.</li>
-        <li class="rise"><b>Honest fitness.</b> Reward getting through; penalize standing out — a move that wins by becoming a new anomaly is no win.</li>
-        <li class="rise"><b>It never ends.</b> The censor adapts, so the repertoire adapts with it.</li>
-      </ul>
-    </div>
+<!-- ============================ DOCS ============================ -->
+<section id="docs">
+  <div class="shead rise">
+    <span class="eyebrow">07 — documentation</span>
+    <h2>The detail behind all of this</h2>
+    <p>Everything above is a summary. These go all the way down, written from the implementation, and they include the measurements that came out the wrong way.</p>
+  </div>
+  <div class="grid two">
+    <a class="card rise" href="book.html">
+      <div class="top"><h3>Opening Book</h3><span class="st adaptive">Theory</span></div>
+      <p>Why a filter's decision lands in the opening of a flow, and what follows from treating a handshake as a repertoire instead of a fixed protocol.</p>
+      <div class="meta">the argument →</div>
+    </a>
+    <a class="card rise" href="architecture.html" style="transition-delay:.06s">
+      <div class="top"><h3>The spine</h3><span class="st built">Architecture</span></div>
+      <p>The six stages in full, both netstacks and why neither wins outright, and the one line the design never crosses.</p>
+      <div class="meta">tun → netstack → flow → router → transport → wire</div>
+    </a>
+    <a class="card rise" href="dns.html" style="transition-delay:.12s">
+      <div class="top"><h3>Five kinds of DNS</h3><span class="st built">Resolution</span></div>
+      <p>DNS appears five separate times in the client. Conflating any two of them produces a resolution loop that deadlocks on the first query.</p>
+      <div class="meta">bootstrap · fake-IP · per-flow · search axis · transport</div>
+    </a>
+    <a class="card rise" href="ipc.html" style="transition-delay:.18s">
+      <div class="top"><h3>The control plane</h3><span class="st built">Processes</span></div>
+      <p>What crosses the privilege boundary, what never does, and why the tunnel keeps forwarding when the interface dies.</p>
+      <div class="meta">pass the descriptor, not the packets</div>
+    </a>
+    <a class="card rise hl" href="modules.html" style="transition-delay:.24s">
+      <div class="top"><h3>Write a module</h3><span class="st adaptive">Contribute</span></div>
+      <p>The guest ABI in full: four exports, the calling convention, the host crypto menu, resource limits and a worked example. A repertoire only grows if people outside the team can add to it.</p>
+      <div class="meta">contributor guide →</div>
+    </a>
   </div>
 </section>
 
-<section>
-  <div class="spread">
-    <div class="rail rise"><span class="piece">♝</span><span class="no">06</span><div class="ann">power where it pays, fidelity where it counts</div></div>
-    <div class="body">
-      <h2 class="rise">Keep fidelity <span class="it">native</span>.</h2>
-      <p class="rise">The parts that must look byte-exact — the real TLS fingerprint — stay in native, audited code, where they can be exact and stay current. Most evasion is a recombination of those vetted building blocks; a sandboxed module is held in reserve for genuinely novel logic.</p>
-    </div>
+<!-- ============================ STATUS ============================ -->
+<section id="status">
+  <div class="shead rise">
+    <span class="eyebrow">08 — status</span>
+    <h2>What is true today</h2>
+    <p>Spark is under active development. The tunnel works end to end on desktop and Android and carries real traffic. The parts that do not exist yet are marked as such here rather than described in the present tense.</p>
   </div>
-</section>
-
-<section>
-  <div class="spread">
-    <div class="rail rise"><span class="piece">♙</span><span class="no">07</span><div class="ann">opening theory — the rest is a <span class="s">different game</span></div></div>
-    <div class="body">
-      <h2 class="rise">Where the move <span class="it">ends</span>.</h2>
-      <p class="rise">A gambit shapes the opening, and only the opening — the hello, its records, the first few segments. Once the handshake completes the gambit is silent; the rest of the connection runs as the transport sees fit.</p>
-      <p class="rise">That's the wager. A censor files its verdict on the first few hundred bytes; if the opening passes, the opening was the game. Shaping the long tail is expensive and high-volume, and the opening is cheap — a few hundred bytes, once. So the book is opening theory: it spends its moves where the verdict is made, and leaves the middlegame to the transport.</p>
-      <blockquote class="rise">The door to the middlegame is left ajar — room reserved for post-opening moves, unused for now — for the day a censor learns to read past the opening.</blockquote>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="spread">
-    <div class="rail rise"><span class="piece">♘</span><span class="no">08</span><div class="ann">the board is wider than <span class="s">one protocol</span></div></div>
-    <div class="body">
-      <h2 class="rise">Other openings, other <span class="it">ports</span>.</h2>
-      <p class="rise">The opening a censor reads isn't always a TLS hello — it's whatever the protocol leads with, and the verdict lands on that opening just the same. A <strong>QUIC</strong> Initial packet, its ClientHello buried in encrypted crypto frames. A <strong>DNS</strong> query — resolution itself, the thing every connection needs first. A <strong>WebRTC</strong> call's STUN binding and DTLS handshake, the shape of every video meeting. An <strong>HTTP</strong> request that can ride a CDN it shares with half the web. A remote-desktop or mail session that opens in the clear before it upgrades. Each is a board the censor has its own reasons not to wall off — block it and you block the real thing that lives there.</p>
-      <p class="rise">So the repertoire generalizes past TLS: a gambit need not be a ClientHello. Anchor at a genuine opening of <em>that</em> protocol, mutate outward, and let the same discovered book — signed, versioned, scored by what reaches the server — find the moves. TLS is simply the dialect we play first; QUIC, DNS, WebRTC, and HTTP are the same game on a wider board. The protocol, and the <strong>port</strong> it speaks on, become part of the move — chosen for the company they keep.</p>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="spread">
-    <div class="rail rise"><span class="piece">⚐</span><span class="no">09</span><div class="ann">from a fragment to a living book</div></div>
-    <div class="body">
-      <h2 class="rise">The <span class="it">line</span>.</h2>
-      <div class="line-moves">
-        <div class="mv done rise"><span class="n">P1</span><span class="x">Shape the opening on the wire — SNI-boundary fragmentation + timing. <span class="s">built</span></span></div>
-        <div class="mv done rise"><span class="n">P2</span><span class="x">The signed gambit genome + the ClientHello knobs. <span class="s">built</span></span></div>
-        <div class="mv rise"><span class="n">P3</span><span class="x">Gambits computed per connection.</span></div>
-        <div class="mv future rise"><span class="n">P4</span><span class="x">Byte-level moves for the hard cases.</span></div>
-        <div class="mv future rise"><span class="n">P5</span><span class="x">The discovery loop, running against the live fleet.</span></div>
-      </div>
-    </div>
+  <div class="rows">
+    <div class="row rise"><span class="nm">Core tunnel</span><span class="ds">TUN capture, both netstacks, TCP and UDP including DNS, and the transport pool with racing and health scoring.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">Handshake shaping</span><span class="ds">The signed parameter format, both execution engines, record framing and wire timing, and browser fingerprint parity verified in CI.</span><span class="st built">Built</span></div>
+    <div class="row rise"><span class="nm">Discovery loop</span><span class="ds">The outer loop that generates, scores and deploys strategies at fleet scale. Server-side, designed and partly built, not yet running against production.</span><span class="st planned">Planned</span></div>
+    <div class="row rise"><span class="nm">Kernel netstack default</span><span class="ds">Ships and is selectable, off by default everywhere. Each platform has a specific unmet condition, and on iOS the reason is permanent.</span><span class="st wip">In progress</span></div>
+    <div class="row rise"><span class="nm">Public source</span><span class="ds">The contributor guide is written and the ABI documented, but the repository is not open yet, so the guide currently describes a contract nobody outside the team can clone.</span><span class="st planned">Planned</span></div>
   </div>
 </section>
 
 <footer>
-  <div class="wrap">
-    <div class="crest">
-      <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="1.2" y="1.2" width="37.6" height="37.6" rx="8" stroke="#c9a04c" stroke-opacity=".4"/><path d="M13 28.5h14M14.5 28.5c0-7.5 1.8-9.2 1.8-13.2 0-2.2-1.3-3.3-1.3-3.3h6.9s-1.3 1.1-1.3 3.3c0 4 1.8 5.7 1.8 13.2" stroke="#c9a04c" stroke-opacity=".7" stroke-width="1.6" stroke-linejoin="round"/></svg>
-      <span class="wm">Opening&nbsp;Book</span>
+  <div class="cols">
+    <div>
+      <a class="brand" href="index.html" style="display:flex; align-items:center; gap:9px; margin-bottom:14px; border:0">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" style="width:20px;height:20px">
+          <path d="M13.4 2 4 13.6h6.2L9.8 22l9.6-11.8h-6.3z" fill="#ff8a3d"/>
+        </svg>
+        <b style="font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:16px; color:var(--bone)">Spark</b>
+      </a>
+      <p>A from-scratch, multi-protocol VPN tunnel in Rust, from the team behind <a href="https://lantern.io">Lantern</a>. An engineering effort described as it currently stands.</p>
     </div>
-    <p>An approach to internet censorship circumvention from the team behind <a href="https://lantern.io">Lantern</a> — a research direction, not a product spec.</p>
-    <div class="links">
-      <a href="architecture.html">The architecture</a>
+    <div>
+      <h5>Documentation</h5>
+      <a href="book.html">Opening Book</a>
+      <a href="architecture.html">The spine</a>
       <a href="dns.html">Five kinds of DNS</a>
       <a href="ipc.html">The control plane</a>
       <a href="modules.html">Write a module</a>
+    </div>
+    <div>
+      <h5>Elsewhere</h5>
+      <a href="https://lantern.io">lantern.io</a>
       <a href="https://github.com/getlantern">github.com/getlantern</a>
     </div>
-    <p class="fine">Specific live strategies are deliberately omitted: the repertoire is meant to be polymorphic and ever-changing. This page describes the <em>approach</em>, not the moves currently on the board.</p>
   </div>
+  <p class="fine">Specific live strategies are deliberately omitted. The repertoire is meant to keep changing, and publishing the strategies currently in play would defeat the purpose of having them. Measurements quoted in the chapters come from named machines and links and are reported as evidence, including the ones that failed to show the result we expected.</p>
 </footer>
-
-<script>
-  const io = new IntersectionObserver((es)=>{
-    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, {threshold:.12, rootMargin:'0px 0px -7% 0px'});
-  document.querySelectorAll('.rise').forEach(el=>io.observe(el));
-  requestAnimationFrame(()=>document.querySelectorAll('header .rise').forEach(el=>el.classList.add('in')));
-</script>
 </body>
 </html>

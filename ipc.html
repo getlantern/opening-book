@@ -7,10 +7,13 @@
 <meta name="description" content="A VPN client is two processes with very different privileges. What crosses between them, what never does, how the privileged side decides the caller is allowed to ask, and why the tunnel keeps forwarding when the channel dies." />
 <meta property="og:title" content="The control plane — Opening Book" />
 <meta property="og:description" content="One side owns the tunnel and the routing table. The other is a user interface. The channel between them is a privilege boundary, and it is a target." />
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/site.css" />
+<script src="assets/site.js" defer></script>
 <style>
   /* Page-local: the frame diagram and the crosses/never-crosses ledger. */
   .frame{display:flex; margin:28px 0 10px; font-family:"JetBrains Mono",monospace;
@@ -50,9 +53,26 @@
 <div class="bg"></div><div class="board"></div>
 <svg class="grain" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
 
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M13.4 2 4 13.6h6.2L9.8 22l9.6-11.8h-6.3z" fill="#ff8a3d"/>
+      </svg>
+      <b>Spark</b><span>getlantern</span>
+    </a>
+    <a class="nl" href="index.html#adapt">How it adapts</a>
+    <a class="nl" href="index.html#path">Data path</a>
+    <a class="nl" href="index.html#transports">Transports</a>
+    <a class="nl" href="index.html#privacy">Privacy</a>
+    <a class="nl" href="index.html#docs">Docs</a>
+    <a class="nl" href="index.html#status">Status</a>
+  </div>
+</nav>
+
 <nav class="subnav">
   <div class="in">
-    <a class="home" href="index.html">← Opening Book</a>
+    <a class="home" href="index.html">← Spark</a>
     <a href="#why">Why two</a>
     <a href="#ledger">The ledger</a>
     <a href="#wire">The wire</a>
@@ -82,7 +102,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♚</span><span class="no">01</span><div class="ann">the UI is the <span class="b">largest attack surface</span> you ship</div></div>
     <div class="body">
-      <h2 class="rise">Why <span class="it">two</span>.</h2>
+      <h2 class="rise">Why two processes</h2>
       <p class="lead rise">Creating a tunnel device and editing the routing table requires root, a Linux capability, or Administrator. A user interface is the biggest, most frequently updated, most exposed thing in the product — web content, an update channel, whatever the user clicks. Running the second with the powers of the first is the whole problem in one sentence.</p>
       <p class="rise">So a shipping client is two processes: a small privileged service that owns the tunnel, and an unprivileged client that draws the window. They frequently run as <strong>different users</strong> — a system service versus the logged-in human — which makes the channel between them a local privilege-escalation target and not merely an internal detail.</p>
       <p class="rise">Android is the exception worth naming: the platform already puts the VPN in a system-managed service inside the same app sandbox, so there is no cross-user split to defend. The other platforms all have one, and each provides its own native way to check who is calling.</p>
@@ -94,7 +114,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♜</span><span class="no">02</span><div class="ann">one descriptor, once — <span class="b">never a packet</span></div></div>
     <div class="body">
-      <h2 class="rise">What crosses, and what <span class="it">never</span> does.</h2>
+      <h2 class="rise">What crosses the boundary</h2>
       <p class="rise">The split is drawn along the control plane. This is the rule the whole design hangs from, and it is worth being blunt about because the alternative is so tempting to write.</p>
 
       <div class="ledger rise">
@@ -104,7 +124,7 @@
             <li>Commands — connect, disconnect, reconfigure</li>
             <li>Status, state, and metrics</li>
             <li>Log and event streams</li>
-            <li>A user-entered secret, submitted <em>once</em></li>
+            <li>A user-entered secret, submitted once</li>
             <li>On Linux, optionally: the tunnel <strong>file descriptor</strong> — one time</li>
           </ul>
         </div>
@@ -130,7 +150,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♟</span><span class="no">03</span><div class="ann">small enough to read in an <span class="s">afternoon</span></div></div>
     <div class="body">
-      <h2 class="rise">The <span class="it">wire</span>.</h2>
+      <h2 class="rise">The wire protocol</h2>
       <p class="rise">A local channel between two processes you ship together does not need a general-purpose RPC framework, and pulling one in would cost more in binary size and dependency surface than the entire protocol is worth. So it's about as small as a protocol gets.</p>
 
       <div class="frame rise">
@@ -156,7 +176,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♛</span><span class="no">04</span><div class="ann">connecting is not the same as being <span class="b">allowed</span></div></div>
     <div class="body">
-      <h2 class="rise">Who is <span class="it">asking</span>.</h2>
+      <h2 class="rise">Authenticating the caller</h2>
       <p class="rise">The privileged side must never trust a peer merely because it managed to connect. Filesystem permissions on the socket are a useful layer and not an answer — they are easy to get subtly wrong at install time, and on some platforms they are advisory about who may open a path rather than who may command a daemon. Each platform provides a real mechanism, and the code uses it explicitly.</p>
 
       <div class="scrollx rise">
@@ -181,7 +201,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♞</span><span class="no">05</span><div class="ann">the tunnel outlives the <span class="s">window</span></div></div>
     <div class="body">
-      <h2 class="rise">Dying <span class="it">well</span>.</h2>
+      <h2 class="rise">When one side dies</h2>
       <p class="rise">Two processes means either one can vanish — crashed, updated, killed by the user, killed by the system. The interesting design work is almost entirely in what happens then.</p>
       <ul>
         <li class="rise"><b>The service is the source of truth.</b> The interface is a view, not a replica. On every connect and reconnect it asks for full status and re-syncs, rather than assuming its picture survived the gap. State that lives only in the UI is state that lies after a restart.</li>
@@ -201,9 +221,9 @@
       <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="1.2" y="1.2" width="37.6" height="37.6" rx="8" stroke="#c9a04c" stroke-opacity=".4"/><path d="M13 28.5h14M14.5 28.5c0-7.5 1.8-9.2 1.8-13.2 0-2.2-1.3-3.3-1.3-3.3h6.9s-1.3 1.1-1.3 3.3c0 4 1.8 5.7 1.8 13.2" stroke="#c9a04c" stroke-opacity=".7" stroke-width="1.6" stroke-linejoin="round"/></svg>
       <span class="wm">Opening&nbsp;Book</span>
     </div>
-    <p>The process chapter. See <a href="architecture.html">the spine</a> for what runs on the privileged side, or <a href="index.html">the theory</a> for why any of it exists.</p>
+    <p>The process chapter. See <a href="architecture.html">the spine</a> for what runs on the privileged side, or <a href="book.html">the theory</a> for why any of it exists.</p>
     <div class="links">
-      <a href="index.html">Opening Book</a>
+      <a href="book.html">Opening Book</a>
       <a href="architecture.html">The architecture</a>
       <a href="dns.html">Five kinds of DNS</a>
       <a href="modules.html">Write a module</a>
@@ -213,12 +233,5 @@
   </div>
 </footer>
 
-<script>
-  const io = new IntersectionObserver((es)=>{
-    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, {threshold:.12, rootMargin:'0px 0px -7% 0px'});
-  document.querySelectorAll('.rise').forEach(el=>io.observe(el));
-  requestAnimationFrame(()=>document.querySelectorAll('header .rise').forEach(el=>el.classList.add('in')));
-</script>
 </body>
 </html>

@@ -7,18 +7,38 @@
 <meta name="description" content="The guest-module contract behind Opening Book: a small WebAssembly ABI for contributing new opening moves. Exports, calling convention, the host crypto menu, resource limits, and a complete worked example." />
 <meta property="og:title" content="Write a module — Opening Book" />
 <meta property="og:description" content="A repertoire only grows if other people can add to it. This is the contract: four exports, one calling convention, and a signed artifact." />
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/site.css" />
+<script src="assets/site.js" defer></script>
 </head>
 <body>
 <div class="bg"></div><div class="board"></div>
 <svg class="grain" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
 
+<nav class="topnav">
+  <div class="in">
+    <a class="brand" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M13.4 2 4 13.6h6.2L9.8 22l9.6-11.8h-6.3z" fill="#ff8a3d"/>
+      </svg>
+      <b>Spark</b><span>getlantern</span>
+    </a>
+    <a class="nl" href="index.html#adapt">How it adapts</a>
+    <a class="nl" href="index.html#path">Data path</a>
+    <a class="nl" href="index.html#transports">Transports</a>
+    <a class="nl" href="index.html#privacy">Privacy</a>
+    <a class="nl" href="index.html#docs">Docs</a>
+    <a class="nl" href="index.html#status">Status</a>
+  </div>
+</nav>
+
 <nav class="subnav">
   <div class="in">
-    <a class="home" href="index.html">← Opening Book</a>
+    <a class="home" href="index.html">← Spark</a>
     <a href="#why">Why</a>
     <a href="#contract">Contract</a>
     <a href="#convention">Convention</a>
@@ -49,7 +69,7 @@
     <div class="rail"><span class="piece">♟</span><div class="no">01</div>
       <div class="ann">A move is <span class="s">code</span>, shipped without shipping a client.</div></div>
     <div class="body">
-      <h2>Why a module at <span class="it">all</span>.</h2>
+      <h2>Why a module at all</h2>
       <p class="lead">A new opening move usually means a new client release. Release cycles are measured in weeks; a censor's response is measured in days. That asymmetry is the whole problem.</p>
       <p>So the moves live outside the binary. A module is a small WebAssembly program, signed, that the client loads at runtime and runs in a sandbox with no filesystem, no network, and no clock — it sees bytes and returns bytes. Adding a move is publishing an artifact, not shipping an app.</p>
       <p>The sandbox is what makes accepting outside contributions tractable. A module cannot open a socket, read a file, or learn where it is running. The worst a hostile module can do is corrupt its own connection and burn its fuel budget.</p>
@@ -62,8 +82,8 @@
     <div class="rail"><span class="piece">♜</span><div class="no">02</div>
       <div class="ann">Two exports required. The rest declare what your module <span class="s">is</span>.</div></div>
     <div class="body">
-      <h2>The <span class="it">contract</span>.</h2>
-      <p class="lead">The host discovers what a module does by looking at what it exports. There is no manifest and no registration call — the exports <em>are</em> the declaration.</p>
+      <h2>The export contract</h2>
+      <p class="lead">The host discovers what a module does by looking at what it exports. There is no manifest and no registration call — the exports are the declaration.</p>
 
       <div class="scrollx"><table class="abi">
         <tr><th>Export</th><th>Signature</th><th>Meaning</th></tr>
@@ -85,7 +105,7 @@
             <td>Called after every invocation once output has been copied out. Rewind your scratch arena here.</td></tr>
       </table></div>
 
-      <p>The three work roles are independent, and a module may be exactly one of them. A pure byte transform exports <code>memory</code> and <code>alloc</code> — always required — plus the two <code>transform_*</code> functions, and no <em>other</em> work-role export; the client sees no <code>handshake_step</code>, so it dials straight through without asking. Nothing in the wiring knows which protocol you implement.</p>
+      <p>The three work roles are independent, and a module may be exactly one of them. A pure byte transform exports <code>memory</code> and <code>alloc</code> — always required — plus the two <code>transform_*</code> functions, and no other work-role export; the client sees no <code>handshake_step</code>, so it dials straight through without asking. Nothing in the wiring knows which protocol you implement.</p>
 
       <div class="note"><b>reset is not a destructor.</b> It rewinds the per-call scratch arena. Anything you keep in globals or at fixed addresses — keys derived during a handshake, a counter, negotiated state — survives across calls, and is exactly how a handshake module hands state to its own steady-state transforms.</div>
     </div>
@@ -97,7 +117,7 @@
     <div class="rail"><span class="piece">♝</span><div class="no">03</div>
       <div class="ann">One convention for <span class="s">every</span> work function.</div></div>
     <div class="body">
-      <h2>Bytes in, bytes <span class="it">out</span>.</h2>
+      <h2>The calling convention</h2>
       <p class="lead">All four work functions share one calling convention, so learning it once covers everything.</p>
 
       <ol class="steps">
@@ -125,7 +145,7 @@
     <div class="rail"><span class="piece">♞</span><div class="no">04</div>
       <div class="ann">Real crypto, run <span class="s">natively</span>, free of fuel.</div></div>
     <div class="body">
-      <h2>What the host <span class="it">lends</span> you.</h2>
+      <h2>What the host provides</h2>
       <p class="lead">A sandbox with no capabilities would force every module to ship its own crypto — slow, large, and its own supply of subtle bugs. So the host lends a fixed menu, imported from the <code>env</code> module.</p>
 
       <div class="scrollx"><table class="abi">
@@ -139,7 +159,7 @@
         <tr><td><code>host_x25519_generate</code><br /><code>host_x25519_agree</code></td><td>Key exchange. Private keys stay host-side behind a handle — your module never sees the bytes.</td></tr>
       </table></div>
 
-      <p>Two properties are worth knowing when you design around this. Host calls run as native code, so they cost you <em>no fuel</em> — a module that leans on the menu for its heavy lifting is both faster and further from the runaway limits than one that reimplements AES in the guest. And private keys are handles, not values: the module asks for an agreement and receives a result, so a bug in your code cannot leak a key it was never given.</p>
+      <p>Two properties are worth knowing when you design around this. Host calls run as native code, so they cost you no fuel — a module that leans on the menu for its heavy lifting is both faster and further from the runaway limits than one that reimplements AES in the guest. And private keys are handles, not values: the module asks for an agreement and receives a result, so a bug in your code cannot leak a key it was never given.</p>
     </div>
   </div>
 </section>
@@ -149,7 +169,7 @@
     <div class="rail"><span class="piece">♛</span><div class="no">05</div>
       <div class="ann">Every limit is a <span class="b">trap</span>, not a truncation.</div></div>
     <div class="body">
-      <h2>The <span class="it">edges</span>.</h2>
+      <h2>Resource limits</h2>
       <p class="lead">A module that misbehaves is stopped, never quietly accommodated. Knowing the edges up front means you size your buffers once and stop thinking about it.</p>
 
       <div class="scrollx"><table class="abi">
@@ -174,7 +194,7 @@
     <div class="rail"><span class="piece">♟</span><div class="no">06</div>
       <div class="ann">Eighty-three lines, <span class="s">no_std</span>, no dependencies.</div></div>
     <div class="body">
-      <h2>The shape of a <span class="it">real one</span>.</h2>
+      <h2>A worked example</h2>
       <p class="lead">The reference module XORs every byte with a constant — deliberately trivial as a transform, and the same shape a serious module has. The excerpts below are <strong>excerpts</strong>, not a compilable listing; the complete module is about eighty lines of <code>no_std</code> Rust with no dependencies.</p>
 
       <div class="code"><span class="c">// The scratch arena, sized to the host's 1 MiB maximum so no valid</span>
@@ -206,17 +226,17 @@
     <div class="rail"><span class="piece">♚</span><div class="no">07</div>
       <div class="ann">Unsigned is <span class="b">unloadable</span>.</div></div>
     <div class="body">
-      <h2>Sign it, then <span class="it">ship it</span>.</h2>
+      <h2>Signing and shipping</h2>
       <p class="lead">Runtime-loadable code is a supply chain. The client will not run a module it cannot verify, and there is no flag to turn that off.</p>
 
       <ol class="steps">
         <li>Compile to <code class="mono">wasm32-unknown-unknown</code>, release.</li>
-        <li>Sign the module — the signature covers the name, the version, <em>and</em> the bytes together, so an artifact cannot be renamed, nor have its version relabelled, without breaking verification.</li>
+        <li>Sign the module — the signature covers the name, the version, and the bytes together, so an artifact cannot be renamed, nor have its version relabelled, without breaking verification.</li>
         <li>The result is a single self-describing artifact the client loads by path or by fetch.</li>
       </ol>
 
       <p>The build script does all three, and it is the only step in the whole project that needs the wasm toolchain — ordinary builds and CI consume the committed artifacts rather than rebuilding them.</p>
-      <p>Development artifacts are signed with a development key that ships in the repo, so you can iterate without touching anything sensitive. That key is <em>only</em> a fallback for builds with no production key pinned: a release pins its own verification key, the production private half never leaves its vault, and CI is public-key only. So a module signed with the repo key is loadable by a development build and by nothing you would ship — which is the property that makes shipping the dev key in the open safe.</p>
+      <p>Development artifacts are signed with a development key that ships in the repo, so you can iterate without touching anything sensitive. That key is only a fallback for builds with no production key pinned: a release pins its own verification key, the production private half never leaves its vault, and CI is public-key only. So a module signed with the repo key is loadable by a development build and by nothing you would ship — which is the property that makes shipping the dev key in the open safe.</p>
 
       <div class="note warn"><b>Signing alone does not stop a downgrade.</b> An older artifact was validly signed, so it still verifies — replaying one is a real attack, and no signature scheme prevents it by itself. The client therefore keeps an <b>anti-rollback floor</b>: the highest version it has installed, checked before the module is compiled, so an artifact carrying a lower version is refused even though its signature is perfectly good. What this asks of you is only that versions increase and that a number is never reused for different bytes.</div>
     </div>
@@ -228,13 +248,13 @@
     <div class="rail"><span class="piece">♦</span><div class="no">08</div>
       <div class="ann">The interesting question is <span class="s">what to write</span>.</div></div>
     <div class="body">
-      <h2>What's worth <span class="it">writing</span>.</h2>
+      <h2>What's worth writing</h2>
       <p class="lead">The contract above is small on purpose. The hard part was never the ABI — it is knowing which opening is worth playing.</p>
       <p>The most useful contributions tend not to be clever ciphers. They are openings that resemble something a censor cannot afford to block, transports that already have a large innocent population, and moves that fail in a boring way when they fail. A module that works beautifully until it is blocked, and then looks obviously anomalous, has made things worse than one that never worked.</p>
       <p>If you are exploring a direction, the shape of the discussion is more valuable than a finished artifact — what population you are hiding in, what a censor would have to give up to block it, and how you would know it stopped working.</p>
       <div class="links" style="margin-top:32px">
         <a href="https://github.com/getlantern">github.com/getlantern</a>
-        <a href="index.html">Read the approach</a>
+        <a href="book.html">Read the approach</a>
       </div>
     </div>
   </div>
@@ -242,23 +262,17 @@
 
 <footer>
   <div class="wrap">
-    <p>Part of <a href="index.html">Opening Book</a> — an approach to internet censorship circumvention from the team behind <a href="https://lantern.io">Lantern</a>. See also <a href="architecture.html">the architecture</a>: where in the client a module actually runs.</p>
+    <p>Part of <a href="book.html">Opening Book</a> — an approach to internet censorship circumvention from the team behind <a href="https://lantern.io">Lantern</a>. See also <a href="architecture.html">the architecture</a>: where in the client a module actually runs.</p>
     <div class="links">
-      <a href="index.html">Opening Book</a>
+      <a href="book.html">Opening Book</a>
       <a href="architecture.html">The architecture</a>
       <a href="dns.html">Five kinds of DNS</a>
       <a href="ipc.html">The control plane</a>
       <a href="https://github.com/getlantern">github.com/getlantern</a>
     </div>
-    <p class="fine">This page documents the module <em>contract</em>: what the host guarantees and what a guest must provide. It deliberately contains no live strategies. The repertoire is meant to be polymorphic and ever-changing, and publishing the moves currently on the board would defeat the point of having a book.</p>
+    <p class="fine">This page documents the module contract: what the host guarantees and what a guest must provide. It deliberately contains no live strategies. The repertoire is meant to be polymorphic and ever-changing, and publishing the moves currently on the board would defeat the point of having a book.</p>
   </div>
 </footer>
 
-<script>
-  const io = new IntersectionObserver((es)=>{
-    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, {threshold:.12, rootMargin:'0px 0px -7% 0px'});
-  document.querySelectorAll('.rise').forEach(el=>io.observe(el));
-</script>
 </body>
 </html>
