@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Five kinds of DNS — Opening Book</title>
+<meta name="description" content="DNS appears five separate times in a circumvention client — startup bootstrap, the in-tunnel fake-IP server, per-flow resolution, an axis of the proxyless search, and a transport of last resort. They are five different problems, and conflating them is how you build a resolution loop." />
+<meta property="og:title" content="Five kinds of DNS — Opening Book" />
+<meta property="og:description" content="Every connection needs a name resolved first, which makes DNS both the first thing a censor breaks and the last thing that still gets out." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css" />
+<style>
+  /* Page-local: the query-path chips and the layer cards. */
+  .path{display:flex; flex-wrap:wrap; align-items:center; gap:8px 6px; margin:28px 0;
+    font-family:"JetBrains Mono",monospace; font-size:11.5px; letter-spacing:.04em}
+  .path .h{border:1px solid var(--line2); border-radius:6px; padding:7px 11px; color:#cfc6b3;
+    background:var(--ink2); white-space:nowrap}
+  .path .h.f{border-color:rgba(201,160,76,.4); color:var(--brass-hi)}
+  .path .h.g{border-color:rgba(92,203,172,.34); color:#a8ded0}
+  .path .ar{color:var(--faint); flex:none}
+
+  .layer{border:1px solid var(--line); border-left:2px solid var(--brass-dim); border-radius:0 12px 12px 0;
+    padding:19px 22px; margin:16px 0; background:linear-gradient(90deg,rgba(236,227,208,.03),transparent 62%)}
+  .layer .w{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.17em;
+    text-transform:uppercase; color:var(--signal); display:block; margin-bottom:8px}
+  .layer h3{font-size:19px; font-weight:500; letter-spacing:-.01em; margin-bottom:7px}
+  .layer p{font-size:15.5px; line-height:1.6; color:#bdb4a2; margin:0}
+  .layer p + p{margin-top:8px}
+  .layer.t{border-left-color:var(--signal)}
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="board"></div>
+<svg class="grain" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+
+<nav class="subnav">
+  <div class="in">
+    <a class="home" href="index.html">← Opening Book</a>
+    <a href="#five">Five roles</a>
+    <a href="#bootstrap">Bootstrap</a>
+    <a href="#fakeip">Fake IP</a>
+    <a href="#oracle">The oracle</a>
+    <a href="#transport">As transport</a>
+  </div>
+</nav>
+
+<header style="min-height:auto; padding:82px 0 58px">
+  <div class="wrap">
+    <div class="crest">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#c9a04c" stroke-width="1.3" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke-opacity=".5"/>
+        <path d="M3 12h18M12 3c2.6 2.6 2.6 15.4 0 18M12 3c-2.6 2.6-2.6 15.4 0 18" stroke-opacity=".5"/>
+        <circle cx="12" cy="12" r="2.2" fill="#5ccbac" stroke="none"/>
+      </svg>
+      <span class="wm">Five&nbsp;kinds&nbsp;of&nbsp;DNS</span>
+      <span class="eco">chapter · resolution</span>
+    </div>
+    <h1 class="rise" style="font-size:clamp(30px,6.6vw,72px)">Every connection starts with a <span class="br">question</span>.</h1>
+    <p class="lede rise" style="transition-delay:.1s; max-width:36ch">Which makes DNS the first thing a censor breaks — and the last thing that still gets <i>out</i>.</p>
+  </div>
+</header>
+
+<section id="five">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♜</span><span class="no">01</span><div class="ann">the same three letters, <span class="b">five different problems</span></div></div>
+    <div class="body">
+      <h2 class="rise">Five <span class="it">roles</span>.</h2>
+      <p class="lead rise">DNS shows up five separate times inside a circumvention client, and they are not variations on one problem — they have different threat models, different failure modes, and different code. Conflating any two of them is how you end up with a resolution loop that deadlocks the tunnel on its own first query.</p>
+
+      <div class="layer rise">
+        <span class="w">role 01 · startup</span>
+        <h3>Bootstrap</h3>
+        <p>Before there is a tunnel, the client has to resolve its <em>own</em> control-plane names — where to fetch config, where the servers are. There is no proxy yet to hide behind, and this is the single most valuable lookup for a censor to poison.</p>
+      </div>
+      <div class="layer rise">
+        <span class="w">role 02 · in-tunnel</span>
+        <h3>The fake-IP server</h3>
+        <p>Once the tunnel is up, every application's DNS lands <em>inside</em> it. The client answers those queries itself — with synthetic addresses — for a reason that has nothing to do with censorship. <a href="#fakeip">§03</a>.</p>
+      </div>
+      <div class="layer rise">
+        <span class="w">role 03 · per-flow</span>
+        <h3>Flow resolution</h3>
+        <p>Having answered with a synthetic address, the client must later turn the name back into a real one to actually dial it — and it cannot ask the operating system, because that question would come straight back to itself.</p>
+      </div>
+      <div class="layer t rise">
+        <span class="w">role 04 · search axis</span>
+        <h3>A dimension of the search</h3>
+        <p>In the proxyless path, <em>how you resolve</em> is one of the two axes being searched over — alongside how the handshake is shaped. <a href="#oracle">§04</a>.</p>
+      </div>
+      <div class="layer t rise">
+        <span class="w">role 05 · transport</span>
+        <h3>DNS as the tunnel itself</h3>
+        <p>On networks where almost nothing escapes, DNS often still does. So it becomes the carrier. <a href="#transport">§05</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="bootstrap">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♟</span><span class="no">02</span><div class="ann">the <span class="b">chicken-and-egg</span> lookup</div></div>
+    <div class="body">
+      <h2 class="rise">The first <span class="it">question</span>.</h2>
+      <p class="rise">A client that reaches its servers through a tunnel still has to find those servers before the tunnel exists. That first lookup happens naked, on whatever network the user is on, and everything downstream depends on it being truthful.</p>
+      <p class="rise">So it isn't one lookup. It's a <strong>race at two levels</strong>: an outer race across whole strategies — encrypted DNS, or asking through a proxy — and an inner race, within encrypted DNS, across a diverse pool of resolvers. Neither a blocked strategy nor a single blocked resolver can hold anything up, because the first <em>validated</em> answer wins and the rest are abandoned.</p>
+      <div class="note rise"><b>Validated is the load-bearing word.</b> A race that accepts the first <em>answer</em> is worse than no race at all — the censor is usually the fastest responder on the network, because it doesn't have to do any actual work to make one up. Speed alone selects <em>for</em> the forgery.</div>
+    </div>
+  </div>
+</section>
+
+<section id="fakeip">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♞</span><span class="no">03</span><div class="ann">the netstack surfaces an IP; the rules need a <span class="s">name</span></div></div>
+    <div class="body">
+      <h2 class="rise">Lying to the <span class="it">application</span>.</h2>
+      <p class="rise">Here is a problem that isn't about censorship at all. Routing rules are written about <strong>names</strong> — this domain direct, that one blocked, this category proxied. But by the time traffic reaches the tunnel it is packets, and packets carry addresses. The name was resolved minutes ago and thrown away.</p>
+      <p class="rise">The fix is to intercept the resolution and never let the name go. The client answers each query with a <strong>synthetic address</strong> from a reserved range, remembers the mapping, and recovers the domain when the application connects to that address moments later.</p>
+
+      <div class="path rise">
+        <span class="h">app asks: example.com</span>
+        <span class="ar">→</span>
+        <span class="h f">28.1.4.9</span>
+        <span class="ar">→</span>
+        <span class="h">app dials 28.1.4.9</span>
+        <span class="ar">→</span>
+        <span class="h f">→ example.com</span>
+        <span class="ar">→</span>
+        <span class="h g">rules · real resolve · dial</span>
+      </div>
+
+      <p class="rise">Which raises the only interesting question here: <em>which</em> synthetic range? The conventional pick is the benchmarking range reserved by <span class="mono">RFC 2544</span>, and it turns out to be actively harmful.</p>
+      <blockquote class="rise">Browsers classify every reserved range as “local” — and then refuse to load a public page's images from a “local” address.</blockquote>
+      <p class="rise">Chromium's Local Network Access rules block cross-origin subresource fetches from a public document down into local address space. Point fake IPs at a reserved range and you get a browser that mostly works, with images silently missing on some sites — a bug that looks like flaky censorship and is nothing of the kind.</p>
+      <p class="rise">So the range is a slice of a <strong>real, globally registered allocation that isn't announced on the public internet</strong> — space that exists on paper, is treated by browsers as ordinary public address space, and that no user will ever legitimately reach. That's an empirical claim about the routing table rather than a guarantee, and it's written down as one.</p>
+      <div class="note warn rise"><b>And the loop.</b> Having answered a query with a fake address, the client must resolve the real one to dial it — and it must not ask the operating system, whose DNS now points back into the tunnel, at the client's own fake-IP server. That path is a deadlock, not a slow lookup. Flow resolution therefore runs on its own encrypted resolver over sockets explicitly excluded from the tunnel. The allocator helps too: it only ever hands out addresses from its own ranges, so a recovered flow's real dial can never re-enter the map.</div>
+      <p class="rise dim">The two per-flow seams differ by intent. A <strong style="color:var(--bone)">direct</strong> flow's domain is unblocked — that is <em>why</em> it's direct — so poisoning isn't the worry and the local resolver is used alone, because racing it against distant ones would throw away the whole point of getting a nearby answer. A <strong style="color:var(--bone)">proxied</strong> flow that has to be resolved client-side is the poisoning-risk case, so there the configured resolver races alongside the resilient pool.</p>
+    </div>
+  </div>
+</section>
+
+<section id="oracle">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♛</span><span class="no">04</span><div class="ann">a forged answer <span class="s">cannot survive the handshake</span></div></div>
+    <div class="body">
+      <h2 class="rise">Why a poisonable resolver is <span class="it">allowed to play</span>.</h2>
+      <p class="rise">In the <a href="architecture.html#verdicts">proxyless path</a>, reaching a blocked site directly is a search over two independent axes: <strong>how the address is learned</strong> — encrypted DNS over HTTPS or TLS, plaintext over TCP or UDP, or just the system resolver — and <strong>how the opening handshake is shaped</strong>. Every pairing is a candidate.</p>
+      <p class="rise">Plaintext and system resolvers are exactly the ones a censor can forge an answer for. Including them looks reckless. It isn't, because of what the test for success actually is.</p>
+      <blockquote class="rise">The certificate is the oracle. Not “did DNS return something,” not “did TCP connect” — did a TLS handshake to that address complete against a verified chain for the hostname we asked for.</blockquote>
+      <p class="rise">A censor can drop your packets and can answer a plaintext query with anything it likes. What it cannot do is produce a valid certificate for someone else's domain. So a poisoned answer doesn't need to be detected and excluded — it simply <em>loses the race</em>, because the strategy built on it fails its own verification. A resolver that would be unsafe to trust on its own is safe to <em>try</em>, when success is defined this strictly.</p>
+      <p class="rise">The search order follows from cost rather than elegance: every resolver against no shaping at all first, and only once plain dials are exhausted does it start paying for shaping. Most of the time the answer is that the DNS was the only thing broken.</p>
+      <div class="note rise"><b>One caveat worth stating.</b> This works because the client is only ever <em>verifying</em> a certificate it did not issue, on a connection it does not terminate. A tool that terminated TLS here — to inspect or rewrite it — would destroy the very property that makes the oracle sound.</div>
+    </div>
+  </div>
+</section>
+
+<section id="transport">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♝</span><span class="no">05</span><div class="ann">the protocol a network <span class="s">cannot afford to block</span></div></div>
+    <div class="body">
+      <h2 class="rise">When DNS is the only way <span class="it">out</span>.</h2>
+      <p class="rise">Captive portals, hotel networks, aggressively filtered mobile carriers: places where almost every port is closed and every protocol is inspected — and DNS still resolves, because a network that breaks DNS breaks itself. That makes it a carrier of last resort.</p>
+      <p class="rise">It is a genuinely bad one. The payload has to be smuggled through query names, which are length-limited and must survive base32 encoding, so useful bytes per packet are pitiful. Resolvers cache, reorder, retry, and truncate. There is no connection to rely on, so reliability has to be rebuilt from scratch — sequencing, acknowledgements, retransmission timers, windows, all of it, on top of a request/response protocol that was never meant to carry a stream.</p>
+      <p class="rise">Which is why the protocol core is written as a library that <strong>does no I/O at all</strong> — no sockets, no async runtime. It transforms bytes and drives state machines; the caller owns the sockets and the timers. That constraint isn't tidiness. A reliability state machine with the network wired into it can only be tested against a network, and the failures being defended against here — a resolver that returns the same cached answer twice, a middlebox that truncates at exactly the wrong byte — are precisely the ones you cannot summon on demand. Pulled apart, the same core is exercised exhaustively by unit and fuzz tests and reused verbatim by both ends.</p>
+      <div class="note rise"><b>It is deliberately not compatible with anything.</b> Wire compatibility with an existing DNS tunnel would mean inheriting a fingerprint that censors have already been trained on. The design borrows architecture from prior work and shares no bytes with it.</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="crest">
+      <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="1.2" y="1.2" width="37.6" height="37.6" rx="8" stroke="#c9a04c" stroke-opacity=".4"/><path d="M13 28.5h14M14.5 28.5c0-7.5 1.8-9.2 1.8-13.2 0-2.2-1.3-3.3-1.3-3.3h6.9s-1.3 1.1-1.3 3.3c0 4 1.8 5.7 1.8 13.2" stroke="#c9a04c" stroke-opacity=".7" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span class="wm">Opening&nbsp;Book</span>
+    </div>
+    <p>The resolution chapter. See <a href="architecture.html">the spine</a> for where these five sit in the client, or <a href="index.html">the theory</a> for why the opening is the whole game.</p>
+    <div class="links">
+      <a href="index.html">Opening Book</a>
+      <a href="architecture.html">The architecture</a>
+      <a href="ipc.html">The control plane</a>
+      <a href="modules.html">Write a module</a>
+      <a href="https://github.com/getlantern">github.com/getlantern</a>
+    </div>
+    <p class="fine">Address ranges and resolver behaviour described here are design rationale, not a live configuration. The specific endpoints a client uses are deployment detail and change.</p>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:.12, rootMargin:'0px 0px -7% 0px'});
+  document.querySelectorAll('.rise').forEach(el=>io.observe(el));
+  requestAnimationFrame(()=>document.querySelectorAll('header .rise').forEach(el=>el.classList.add('in')));
+</script>
+</body>
+</html>

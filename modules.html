@@ -11,59 +11,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/site.css" />
-<style>
-  /* Page-local components: the reference tables and callouts this chapter needs and the
-     narrative page does not. Everything else comes from the shared sheet. */
-  .subnav{position:sticky; top:0; z-index:10; -webkit-backdrop-filter:blur(9px); backdrop-filter:blur(9px);
-    background:rgba(9,10,14,.82); border-bottom:1px solid var(--line)}
-  .subnav .in{max-width:920px; margin:0 auto; padding:13px 30px; display:flex; align-items:center; gap:22px;
-    font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.18em; text-transform:uppercase}
-  .subnav a{color:var(--dim); border:0}
-  .subnav a:hover{color:var(--signal)}
-  .subnav .home{color:var(--brass); margin-right:auto}
-  .subnav .home:hover{color:var(--brass-hi)}
-  /* Six links in a flex row overflow a phone. Scroll them rather than wrapping: wrapping doubles
-     the sticky bar's height and eats the viewport on exactly the screens that have least of it.
-     `margin-right:auto` on .home is dropped here — with scrolling it would push the rest off. */
-  @media (max-width:700px){
-    .subnav .in{overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; gap:18px}
-    .subnav .in::-webkit-scrollbar{display:none}
-    .subnav a{white-space:nowrap}
-    .subnav .home{margin-right:4px}
-  }
-
-  table.abi{width:100%; border-collapse:collapse; margin:26px 0; font-size:14.5px}
-  table.abi th{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.16em;
-    text-transform:uppercase; color:var(--signal); text-align:left; font-weight:500;
-    padding:0 14px 11px 0; border-bottom:1px solid var(--line2); vertical-align:bottom}
-  table.abi td{padding:13px 14px 13px 0; border-bottom:1px solid var(--line); color:#bdb4a2;
-    vertical-align:top; line-height:1.55}
-  table.abi td:first-child{white-space:nowrap}
-  table.abi code{font-family:"JetBrains Mono",monospace; font-size:13px; color:var(--bone)}
-  table.abi .req{color:var(--brass); font-family:"JetBrains Mono",monospace; font-size:10.5px;
-    letter-spacing:.1em; text-transform:uppercase}
-  table.abi .opt{color:var(--faint); font-family:"JetBrains Mono",monospace; font-size:10.5px;
-    letter-spacing:.1em; text-transform:uppercase}
-
-  .note{border-left:2px solid var(--brass-dim); padding:4px 0 4px 22px; margin:26px 0;
-    color:#bdb4a2; font-size:16.5px}
-  .note b{color:var(--brass-hi); font-weight:500}
-  .warn{border-left-color:var(--blood)}
-  .warn b{color:var(--blood)}
-
-  .steps{counter-reset:step; list-style:none; margin:26px 0}
-  /* Explicit rather than inheriting `li{position:relative}` from the shared sheet: the counter
-     below is absolutely positioned, and this page should not break if that rule moves. */
-  .steps li{counter-increment:step; position:relative; padding-left:44px; margin-bottom:17px}
-  .steps li::before{content:counter(step); position:absolute; left:0; top:-1px;
-    font-family:"JetBrains Mono",monospace; font-weight:700; font-size:13px; color:var(--brass);
-    width:26px; height:26px; display:grid; place-items:center;
-    border:1px solid var(--line2); border-radius:50%}
-
-  .trio{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:26px 0}
-  @media (max-width:760px){ .trio,.duo{grid-template-columns:1fr} }
-  @media (max-width:760px){ .spread{grid-template-columns:1fr; gap:22px} }
-</style>
 </head>
 <body>
 <div class="bg"></div><div class="board"></div>
@@ -72,11 +19,14 @@
 <nav class="subnav">
   <div class="in">
     <a class="home" href="index.html">← Opening Book</a>
+    <a href="#why">Why</a>
     <a href="#contract">Contract</a>
     <a href="#convention">Convention</a>
     <a href="#menu">Host menu</a>
+    <a href="#limits">Limits</a>
     <a href="#example">Example</a>
     <a href="#ship">Ship it</a>
+    <a href="#contribute">Contribute</a>
   </div>
 </nav>
 
@@ -115,7 +65,7 @@
       <h2>The <span class="it">contract</span>.</h2>
       <p class="lead">The host discovers what a module does by looking at what it exports. There is no manifest and no registration call — the exports <em>are</em> the declaration.</p>
 
-      <table class="abi">
+      <div class="scrollx"><table class="abi">
         <tr><th>Export</th><th>Signature</th><th>Meaning</th></tr>
         <tr><td><code>memory</code></td><td><span class="req">required</span></td>
             <td>Your linear memory, exported so the host can write inputs into it and read outputs back out.</td></tr>
@@ -133,7 +83,7 @@
             <td>One-time setup with configuration bytes.</td></tr>
         <tr><td><code>reset</code></td><td><code>() → ()</code> <span class="opt">optional</span></td>
             <td>Called after every invocation once output has been copied out. Rewind your scratch arena here.</td></tr>
-      </table>
+      </table></div>
 
       <p>The three work roles are independent, and a module may be exactly one of them. A pure byte transform exports <code>memory</code> and <code>alloc</code> — always required — plus the two <code>transform_*</code> functions, and no <em>other</em> work-role export; the client sees no <code>handshake_step</code>, so it dials straight through without asking. Nothing in the wiring knows which protocol you implement.</p>
 
@@ -178,7 +128,7 @@
       <h2>What the host <span class="it">lends</span> you.</h2>
       <p class="lead">A sandbox with no capabilities would force every module to ship its own crypto — slow, large, and its own supply of subtle bugs. So the host lends a fixed menu, imported from the <code>env</code> module.</p>
 
-      <table class="abi">
+      <div class="scrollx"><table class="abi">
         <tr><th>Import</th><th>What it gives you</th></tr>
         <tr><td><code>host_rand</code></td><td>Cryptographic randomness.</td></tr>
         <tr><td><code>host_hash</code></td><td>Hashing.</td></tr>
@@ -187,7 +137,7 @@
         <tr><td><code>host_aes_gcm_seal</code><br /><code>host_aes_gcm_open</code></td><td>AES-GCM, for openings that must look like TLS.</td></tr>
         <tr><td><code>host_chacha20</code></td><td>The raw stream cipher, when you need the keystream itself.</td></tr>
         <tr><td><code>host_x25519_generate</code><br /><code>host_x25519_agree</code></td><td>Key exchange. Private keys stay host-side behind a handle — your module never sees the bytes.</td></tr>
-      </table>
+      </table></div>
 
       <p>Two properties are worth knowing when you design around this. Host calls run as native code, so they cost you <em>no fuel</em> — a module that leans on the menu for its heavy lifting is both faster and further from the runaway limits than one that reimplements AES in the guest. And private keys are handles, not values: the module asks for an agreement and receives a result, so a bug in your code cannot leak a key it was never given.</p>
     </div>
@@ -202,7 +152,7 @@
       <h2>The <span class="it">edges</span>.</h2>
       <p class="lead">A module that misbehaves is stopped, never quietly accommodated. Knowing the edges up front means you size your buffers once and stop thinking about it.</p>
 
-      <table class="abi">
+      <div class="scrollx"><table class="abi">
         <tr><th>Limit</th><th>Value</th><th>Why</th></tr>
         <tr><td>Input / output</td><td><code>1 MiB</code></td>
             <td>The largest chunk the host will hand you, and the largest it will read back. Size your arena to match and no valid call is ever rejected.</td></tr>
@@ -212,7 +162,7 @@
             <td>The same bound for function references.</td></tr>
         <tr><td>Fuel</td><td><code>5,000,000 + 1024/byte</code></td>
             <td>Refilled per call, so bulk work is never penalized. It bounds a spin, not throughput.</td></tr>
-      </table>
+      </table></div>
 
       <p>The fuel formula is deliberately generous: a legitimate transform of a full 1 MiB chunk has over a billion units to work with. It exists so that a module with an accidental infinite loop traps instead of hanging the connection forever.</p>
     </div>
@@ -292,7 +242,14 @@
 
 <footer>
   <div class="wrap">
-    <p>Part of <a href="index.html">Opening Book</a> — an approach to internet censorship circumvention from the team behind <a href="https://lantern.io">Lantern</a>.</p>
+    <p>Part of <a href="index.html">Opening Book</a> — an approach to internet censorship circumvention from the team behind <a href="https://lantern.io">Lantern</a>. See also <a href="architecture.html">the architecture</a>: where in the client a module actually runs.</p>
+    <div class="links">
+      <a href="index.html">Opening Book</a>
+      <a href="architecture.html">The architecture</a>
+      <a href="dns.html">Five kinds of DNS</a>
+      <a href="ipc.html">The control plane</a>
+      <a href="https://github.com/getlantern">github.com/getlantern</a>
+    </div>
     <p class="fine">This page documents the module <em>contract</em>: what the host guarantees and what a guest must provide. It deliberately contains no live strategies. The repertoire is meant to be polymorphic and ever-changing, and publishing the moves currently on the board would defeat the point of having a book.</p>
   </div>
 </footer>

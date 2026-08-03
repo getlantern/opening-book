@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The spine — Opening Book</title>
+<meta name="description" content="How a raw IP packet becomes a shaped opening on the wire: the tun, the netstack, the flow, the four verdicts, the transport slot — and the one line the architecture never crosses." />
+<meta property="og:title" content="The spine — Opening Book" />
+<meta property="og:description" content="A packet is not a conversation. Six stages turn one into the other — and exactly one of them is allowed to be clever." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css" />
+<style>
+  /* Page-local: the stage diagram. Everything else comes from the shared sheet. */
+  .spine{margin:36px 0 8px}
+  .stg{display:grid; grid-template-columns:118px minmax(0,1fr); gap:0 24px}
+  .stg .nm{font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--brass); text-align:right; padding-top:12px}
+  /* The left border of every stage's body column *is* the spine — one continuous line down the
+     page, with a rotated square punched over it per stage. Drawing it per-stage rather than as one
+     absolutely-positioned rule means it cannot fall out of sync with the content's height. */
+  .stg .col{border-left:1px solid var(--line2); padding:0 0 28px 26px; position:relative}
+  .stg:last-child .col{border-left-color:transparent; padding-bottom:0}
+  .stg .col::before{content:""; position:absolute; left:-5px; top:13px; width:9px; height:9px;
+    transform:rotate(45deg); background:var(--ink2); border:1px solid var(--brass-dim)}
+  .stg .form{display:inline-block; font-family:"JetBrains Mono",monospace; font-size:10px;
+    letter-spacing:.15em; text-transform:uppercase; color:var(--signal);
+    border:1px solid rgba(92,203,172,.26); border-radius:20px; padding:3px 11px;
+    background:rgba(92,203,172,.05); margin-bottom:10px}
+  .stg .col p{font-size:16px; line-height:1.6; margin:0; color:#bdb4a2}
+  .stg .col p + p{margin-top:9px}
+  .stg .col b{color:#fff; font-weight:500}
+  .stg .col .hot{color:var(--brass-hi)}
+  @media (max-width:640px){
+    .stg{grid-template-columns:1fr; gap:0}
+    .stg .nm{text-align:left; padding:0 0 7px 26px}
+    /* The name row would otherwise sit outside the spine and break the line. Give it the same
+       border so the rule stays continuous, and hide the node until the body column draws it. */
+    .stg .nm{border-left:1px solid var(--line2); padding-top:16px}
+    .stg:first-child .nm{padding-top:0}
+  }
+
+  .verdicts{display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin:28px 0}
+  .vd{border:1px solid var(--line); border-radius:12px; padding:19px 20px;
+    background:linear-gradient(180deg,rgba(236,227,208,.03),rgba(236,227,208,.008))}
+  .vd .k{font-family:"JetBrains Mono",monospace; font-size:11px; letter-spacing:.16em;
+    text-transform:uppercase; display:block; margin-bottom:9px; color:var(--brass)}
+  .vd p{font-size:15px; line-height:1.55; margin:0; color:#bdb4a2}
+  .vd.sig .k{color:var(--signal)}
+  .vd.red .k{color:var(--blood)}
+  @media (max-width:640px){ .verdicts{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="board"></div>
+<svg class="grain" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+
+<nav class="subnav">
+  <div class="in">
+    <a class="home" href="index.html">← Opening Book</a>
+    <a href="#gap">The gap</a>
+    <a href="#spine">The spine</a>
+    <a href="#stacks">Two stacks</a>
+    <a href="#verdicts">Verdicts</a>
+    <a href="#slot">The slot</a>
+    <a href="#split">The split</a>
+    <a href="#platforms">Platforms</a>
+  </div>
+</nav>
+
+<header style="min-height:auto; padding:82px 0 58px">
+  <div class="wrap">
+    <div class="crest">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#c9a04c" stroke-width="1.3" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h16" stroke-opacity=".5"/>
+        <circle cx="8" cy="6" r="2" fill="#5ccbac" stroke="none"/>
+        <circle cx="14" cy="12" r="2" fill="#5ccbac" stroke="none"/>
+        <circle cx="19" cy="18" r="2" fill="#c9a04c" stroke="none"/>
+      </svg>
+      <span class="wm">The&nbsp;spine</span>
+      <span class="eco">chapter · architecture</span>
+    </div>
+    <h1 class="rise" style="font-size:clamp(30px,6.6vw,72px)">A packet is not a <span class="br">conversation</span>.</h1>
+    <p class="lede rise" style="transition-delay:.1s; max-width:38ch">Six stages turn one into the other. Exactly one of them is allowed to be <i>clever</i>.</p>
+  </div>
+</header>
+
+<section id="gap">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♖</span><span class="no">01</span><div class="ann">the operating system and the transport want <span class="b">different things</span></div></div>
+    <div class="body">
+      <h2 class="rise">The <span class="it">gap</span>.</h2>
+      <p class="lead rise">Capture a device's traffic and the operating system hands you a firehose of raw IP packets — headers, sequence numbers, retransmissions, fragments, the lot. Hand those to a proxy transport and it has no idea what to do with them. A transport wants two things: <em>where is this going</em>, and <em>what are the bytes</em>.</p>
+      <p class="rise">Nothing bridges that gap for free. Something has to speak enough TCP/IP to terminate a connection locally — to watch a SYN go by, decide that a connection is being opened, complete the handshake on the application's behalf, reassemble the segments into an ordered byte stream, and remember where the application actually meant to send it. Only then is there a conversation to proxy.</p>
+      <p class="rise">That machinery is the least glamorous part of a circumvention tool and the part most likely to decide whether it is usable. Everything on the <a href="index.html">narrative page</a> — the gambit, the genome, the discovery loop — happens in the last few inches of this pipeline. This chapter is the pipeline.</p>
+    </div>
+  </div>
+</section>
+
+<section id="spine">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♗</span><span class="no">02</span><div class="ann">one path, six stages, one <span class="s">shaped opening</span></div></div>
+    <div class="body">
+      <h2 class="rise">Packet to <span class="it">opening</span>.</h2>
+      <p class="rise">The whole client is one path. Each stage changes what the data <em>is</em>, and hands the next stage something narrower.</p>
+
+      <div class="spine rise">
+        <div class="stg">
+          <div class="nm">tun</div>
+          <div class="col">
+            <span class="form">IP packets</span>
+            <p><b>The device.</b> A virtual interface the OS routes traffic into — <code class="mono">utun</code> on macOS, WinTun on Windows, a tun fd from <code class="mono">VpnService</code> on Android, a packet-flow object on iOS. Read gives you a packet; write puts one back into the OS as though it arrived from the network.</p>
+            <p>This is also the privilege boundary: creating one and editing the routing table needs root, <code class="mono">CAP_NET_ADMIN</code>, or Administrator.</p>
+          </div>
+        </div>
+        <div class="stg">
+          <div class="nm">netstack</div>
+          <div class="col">
+            <span class="form">TCP state · UDP datagrams</span>
+            <p><b>The hard part.</b> A TCP/IP implementation that terminates connections locally instead of forwarding them: completes handshakes, tracks windows, reassembles streams, and surfaces each connection as something you can read and write. Two very different implementations do this — <a href="#stacks">§03</a>.</p>
+          </div>
+        </div>
+        <div class="stg">
+          <div class="nm">flow</div>
+          <div class="col">
+            <span class="form">stream + intent</span>
+            <p><b>The unit of work.</b> A source, an <em>original destination</em> — the address the application actually dialed, which the netstack has to preserve because the packets were redirected — and a byte stream. Everything downstream is written against this and knows nothing about packets.</p>
+            <p>When DNS is being handled locally, the destination may be a synthetic address that maps back to a <em>name</em>. Carrying the name rather than an IP matters: it lets the exit resolve, and it's what the routing rules match on.</p>
+          </div>
+        </div>
+        <div class="stg">
+          <div class="nm">router</div>
+          <div class="col">
+            <span class="form">verdict</span>
+            <p><b>Per flow, one of four answers</b> — proxy it, dial it directly, dial it directly <em>with circumvention</em>, or drop it. Matched on domain, IP, geography, port, and process. <a href="#verdicts">§04</a>.</p>
+          </div>
+        </div>
+        <div class="stg">
+          <div class="nm">transport</div>
+          <div class="col">
+            <span class="form">framed bytes</span>
+            <p><b>The pluggable slot.</b> One trait — <em>dial a target, return a stream</em> — behind which sit a plain tunnel, AnyTLS, Shadowsocks, Hysteria2, a DNS tunnel, a domain-fronted meek path, and sandboxed WebAssembly modules. <a href="#slot">§05</a>.</p>
+          </div>
+        </div>
+        <div class="stg">
+          <div class="nm">wire</div>
+          <div class="col">
+            <span class="form hot" style="color:var(--brass-hi); border-color:rgba(230,194,119,.3); background:rgba(230,194,119,.05)">the opening</span>
+            <p><b>Where the book plays.</b> The first few hundred bytes the censor will read: which extensions in what order, how the hello is cut into records, where the bytes split across segments, and how they're timed.</p>
+            <p class="hot">This is the only stage that is allowed to be clever. The five above it are deliberately boring — a bug there looks exactly like a censor, and you will misdiagnose it for a week.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="note rise"><b>Why so rigid?</b> Because failures at different stages are indistinguishable from the outside. A netstack that mishandles a window update and a censor that drops your handshake both present as "the connection hangs." The stages exist so each can be proven alone — which is also why the tool was built in exactly this order: netstack with no transport first, transport with no netstack second, wired together third.</div>
+    </div>
+  </div>
+</section>
+
+<section id="stacks">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♞</span><span class="no">03</span><div class="ann">write the TCP, or <span class="s">borrow the kernel's</span></div></div>
+    <div class="body">
+      <h2 class="rise">Two ways to terminate a <span class="it">connection</span>.</h2>
+      <p class="rise">The netstack stage has two implementations, and the choice between them is more interesting than it looks.</p>
+
+      <div class="duo">
+        <div class="chip rise"><span class="t">stack · userspace</span><h3>smoltcp</h3><p>A TCP/IP stack compiled into the binary. Reads packets off the tun, runs the state machine itself, hands up streams. Works identically everywhere, including where there is no kernel tun at all.</p></div>
+        <div class="chip rise" style="transition-delay:.08s"><span class="t">stack · system</span><h3>Kernel TCP</h3><p>Rewrite each packet's destination to a local listener and put it back. The OS's own TCP stack — decades of congestion control, zero-copy, hardware offload — does the termination. You only move headers.</p></div>
+      </div>
+
+      <p class="rise">The kernel stack should win, and on paper it does: no userspace reassembly, mature congestion control, less CPU per byte. The userspace stack has a specific pathology it fixes — under several concurrent downloads its throughput <strong>collapses</strong>, because a single task is doing all the dispatch. On a small two-core server that collapse takes it from ~1.5 Gb/s to <strong>0.13 Gb/s</strong>. The kernel stack eliminates it outright.</p>
+
+      <blockquote class="rise">Then we tried to reproduce the collapse on a laptop, and couldn't.</blockquote>
+
+      <p class="rise">The pathology is <strong>CPU-bound</strong>, so its severity scales inversely with how fast the processor is. On Apple silicon the userspace stack held 0.268 Gb/s across four concurrent streams — twice the floor measured on the small server, at the fastest link we could put in front of it. The regime that justifies the kernel stack may simply not exist on a modern desktop.</p>
+
+      <p class="rise">Which inverts the usual instinct. The case for borrowing the kernel's TCP is <em>strongest where CPUs are weakest</em> — phones, cheap hardware, battery-sensitive devices — and weakest on exactly the developer laptops where this kind of work normally gets benchmarked and declared a win.</p>
+
+      <div class="note warn rise"><b>So it isn't the default.</b> Not on any platform. Each one is gated behind a specific unmet condition — a Linux reverse-path-filtering interaction, an unmeasured advantage on macOS, an open UDP packet-loss defect on Android, an unwritten implementation on Windows, and, on iOS, a permanent one: there is no kernel tun to redirect to, so the technique has nothing to redirect <em>to</em>. It ships, it is selectable, and it stays off until a platform's gate actually passes. An architecture is allowed to have a faster path it does not yet trust.</div>
+    </div>
+  </div>
+</section>
+
+<section id="verdicts">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♛</span><span class="no">04</span><div class="ann">not everything should go through the <span class="s">tunnel</span></div></div>
+    <div class="body">
+      <h2 class="rise">Four <span class="it">verdicts</span>.</h2>
+      <p class="rise">Routing every packet through a proxy is slow, expensive, and often counterproductive — it makes local services unreachable and pushes traffic through a distant exit that had no reason to go there. So each flow gets judged on its own.</p>
+
+      <div class="verdicts rise">
+        <div class="vd"><span class="k">proxy</span><p>Through the pool, to an exit. The default, and what everything else is measured against.</p></div>
+        <div class="vd sig"><span class="k">direct</span><p>Dial it here, on a protected socket that skips the tunnel. Plain connection, no tricks — for traffic that was never blocked.</p></div>
+        <div class="vd sig"><span class="k">proxyless</span><p>Dial it here <em>and</em> get through: un-poisoned resolution plus a shaped opening handshake. No proxy, no exit hop, no bandwidth cost — the censor is defeated on the direct path itself.</p></div>
+        <div class="vd red"><span class="k">reject</span><p>Drop it. Ads, malware, phishing.</p></div>
+      </div>
+
+      <p class="rise"><strong>Proxyless is the interesting one</strong>, and it's deliberately not a variant of "direct." Direct means a plain connection with no cleverness; quietly redefining it would change the behaviour of every rule already written. Proxyless is its own verdict: the site is blocked, but blocked in a way that opening-shaping alone can beat, so no exit server needs to carry the bytes at all. It is the same book from the <a href="index.html">narrative page</a>, played without a proxy behind it.</p>
+
+      <p class="rise dim">The catch is that the right shaping is network-specific — what defeats one carrier's middlebox is noise on another. So a proven strategy is remembered against a <em>fingerprint of the network it was proven on</em>, and re-derived when that changes. The fingerprint costs nothing to take: open a UDP socket toward a documentation-only address that will never be routed, and read back which local address the kernel picked. Nothing is transmitted; it is a route lookup with a socket API.</p>
+    </div>
+  </div>
+</section>
+
+<section id="slot">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♝</span><span class="no">05</span><div class="ann">one trait, many <span class="s">wire protocols</span></div></div>
+    <div class="body">
+      <h2 class="rise">The transport <span class="it">slot</span>.</h2>
+      <p class="rise">Everything below the router is one interface: <em>dial this target, give me back a stream</em>. That narrowness is what makes the repertoire possible — a new wire protocol is a new implementation of one trait, not a change to the client.</p>
+      <div class="code rise"><span class="c">// the entire contract every wire protocol implements</span>
+<span class="k">async fn</span> dial(&amp;<span class="k">self</span>, target: SocketAddr) -&gt; Result&lt;BoxedStream&gt;;
+<span class="c">// …plus an opt-in variant that carries a *domain* to the exit,
+//    so the exit resolves and the client never has to.</span></div>
+      <p class="rise">Behind it today: a plain tunnel, <strong>AnyTLS</strong>, <strong>Shadowsocks</strong>, <strong>Hysteria2</strong>, a <strong>DNS tunnel</strong> for networks where little else escapes, a domain-fronted <strong>meek</strong> path, and the proxyless direct path. They are dialed through a pool that races and scores them, so a protocol that stops working stops being chosen.</p>
+      <p class="rise">One slot is not a Rust implementation at all: a <strong>sandboxed WebAssembly module</strong>, so a new obfuscation can be written, signed, and delivered without shipping a new client — and by someone who isn't us. That contract is a chapter of its own.</p>
+      <p class="rise" style="margin-top:26px"><a href="modules.html">→ Write a module</a> <span class="dim">— the four exports, the calling convention, the host crypto menu, and a worked example.</span></p>
+    </div>
+  </div>
+</section>
+
+<section id="split">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♚</span><span class="no">06</span><div class="ann">pass the <span class="b">descriptor</span>, never the packets</div></div>
+    <div class="body">
+      <h2 class="rise">The line that never <span class="it">moves</span>.</h2>
+      <p class="rise">A shipping client is two processes. The privileged one owns the tunnel device and the routing table. The unprivileged one is the user interface — large, frequently updated, exposed to whatever the user clicks. You do not want the second running with the powers of the first.</p>
+      <blockquote class="rise">The packet path never crosses a process boundary. Hand over the file descriptor once, not the packets.</blockquote>
+      <p class="rise">So the split is drawn along the <strong>control plane</strong>, not the data plane. What crosses between processes is commands, status, and logs — a few messages a second. What never crosses is traffic. Shipping packets over a socket to another process would double-copy every one of them and spend the entire performance budget on ceremony. Whichever process owns the tunnel also runs the netstack and the transports; the core is written so it doesn't know or care which process that is.</p>
+      <p class="rise">Two consequences worth stating plainly. The privileged side <strong>authenticates its caller</strong> rather than trusting whoever connects to the socket — peer credentials, pipe permissions, or code-signing identity, depending on the platform. And proxy secrets live only on the privileged side: the UI can ask for status, and cannot ask for keys.</p>
+    </div>
+  </div>
+</section>
+
+<section id="platforms">
+  <div class="spread">
+    <div class="rail rise"><span class="piece">♘</span><span class="no">07</span><div class="ann">the same spine, five <span class="s">different doorways</span></div></div>
+    <div class="body">
+      <h2 class="rise">Five ways in, one <span class="it">core</span>.</h2>
+      <p class="rise">Every platform hands you packets differently and disagrees about who is allowed to ask. Only the first stage of the spine changes.</p>
+      <div class="scrollx rise">
+      <table class="abi">
+        <thead><tr><th>Platform</th><th>Tunnel primitive</th><th>What's different</th></tr></thead>
+        <tbody>
+          <tr><td><code>Linux</code></td><td>kernel tun</td><td>Privilege via a service process; the descriptor can be passed to a less-privileged one.</td></tr>
+          <tr><td><code>macOS</code></td><td><code>utun</code></td><td>A system extension owns the device. Traffic to a local address never reaches the routing table, which makes same-machine testing impossible — benchmarks need a second box.</td></tr>
+          <tr><td><code>Windows</code></td><td>WinTun</td><td>Different socket-binding semantics; the kernel-stack path needs its own implementation rather than a port.</td></tr>
+          <tr><td><code>Android</code></td><td><code>VpnService</code> → tun fd</td><td>It really is a Linux tun, so the kernel stack applies. Upstream sockets must be explicitly protected or they route back into the tunnel.</td></tr>
+          <tr><td><code>iOS</code></td><td>packet-flow object</td><td>Not a kernel tun at all. Userspace stack only, permanently — and a hard memory ceiling that sizes every buffer in the system.</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="note rise"><b>A worked example of why this is fussy.</b> On Android the kernel stack initialized cleanly and forwarded nothing — 100% loss, no error anywhere. The redirect listener had been bound to the tunnel's <em>address</em> but not to the tunnel <em>device</em>, and Linux needs both before it will deliver. One socket option. It presented, from every angle available to the user, as a censor blocking the connection.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="spread">
+    <div class="rail rise"><span class="piece">⚐</span><span class="no">08</span><div class="ann">every byte ships to <span class="s">every user</span></div></div>
+    <div class="body">
+      <h2 class="rise">The <span class="it">budget</span>.</h2>
+      <p class="rise">A circumvention client is downloaded by people on metered connections, over links that are actively hostile, sometimes passed between phones by hand. Size is a feature. The target is under three megabytes stripped, and it is enforced rather than hoped for: aggressive optimization for size, fat link-time optimization, one codegen unit, symbols stripped.</p>
+      <p class="rise">That budget is also an architectural constraint, and it does real work. It rules out pulling in a second TLS implementation, or a heavyweight HTTP client, or the kind of transitive dependency tree that arrives with a C library attached. When a design decision is close, the smaller one usually wins — and the discipline of justifying every dependency is most of what keeps the attack surface of a security tool honest.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="crest">
+      <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="1.2" y="1.2" width="37.6" height="37.6" rx="8" stroke="#c9a04c" stroke-opacity=".4"/><path d="M13 28.5h14M14.5 28.5c0-7.5 1.8-9.2 1.8-13.2 0-2.2-1.3-3.3-1.3-3.3h6.9s-1.3 1.1-1.3 3.3c0 4 1.8 5.7 1.8 13.2" stroke="#c9a04c" stroke-opacity=".7" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span class="wm">Opening&nbsp;Book</span>
+    </div>
+    <p>The architecture chapter. Read <a href="index.html">the theory</a> for why the opening is the whole game, or <a href="modules.html">the module contract</a> to add a move to the book.</p>
+    <div class="links">
+      <a href="index.html">Opening Book</a>
+      <a href="dns.html">Five kinds of DNS</a>
+      <a href="ipc.html">The control plane</a>
+      <a href="modules.html">Write a module</a>
+      <a href="https://github.com/getlantern">github.com/getlantern</a>
+    </div>
+    <p class="fine">Measurements quoted here are from specific machines and links and are reported as evidence, not as benchmarks — including the ones that failed to show the result we expected.</p>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:.12, rootMargin:'0px 0px -7% 0px'});
+  document.querySelectorAll('.rise').forEach(el=>io.observe(el));
+  requestAnimationFrame(()=>document.querySelectorAll('header .rise').forEach(el=>el.classList.add('in')));
+</script>
+</body>
+</html>
