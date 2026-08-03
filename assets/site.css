@@ -142,8 +142,9 @@
   .subnav a:hover{color:var(--signal)}
   .subnav .home{color:var(--brass); margin-right:auto}
   .subnav .home:hover{color:var(--brass-hi)}
-  /* Six links in a flex row overflow a phone. Scroll them rather than wrapping: wrapping doubles
-     the sticky bar's height and eats the viewport on exactly the screens that have least of it.
+  /* A chapter's worth of links in a flex row overflows a phone (chapters currently run to nine).
+     Scroll them rather than wrapping: wrapping doubles the sticky bar's height and eats the
+     viewport on exactly the screens that have least of it. Verified to stay one 44px row at 320px.
      `margin-right:auto` on .home is dropped here — with scrolling it would push the rest off. */
   @media (max-width:700px){
     .subnav .in{overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; gap:18px}
