@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Extensionless URLs, matching what Cloudflare Pages actually serves and what the pages
+     declare as canonical. Listing the .html forms would advertise URLs that 308 elsewhere. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://spark.lantern.io/</loc><priority>1.0</priority></url>
+  <url><loc>https://spark.lantern.io/book</loc><priority>0.8</priority></url>
+  <url><loc>https://spark.lantern.io/architecture</loc><priority>0.8</priority></url>
+  <url><loc>https://spark.lantern.io/dns</loc><priority>0.8</priority></url>
+  <url><loc>https://spark.lantern.io/ipc</loc><priority>0.8</priority></url>
+  <url><loc>https://spark.lantern.io/modules</loc><priority>0.8</priority></url>
+</urlset>

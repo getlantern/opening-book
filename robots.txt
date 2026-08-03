@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://spark.lantern.io/sitemap.xml
