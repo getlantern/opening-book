@@ -66,12 +66,12 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♚</span><span class="no">01</span><div class="ann">the opening is <span class="b">observed</span>; the verdict comes early</div></div>
     <div class="body">
-      <h2 class="rise">Classify, then <span class="it">treat</span>.</h2>
-      <p class="lead rise">A modern censor doesn't read your whole conversation. It glances at the opening of every connection — the TLS <span class="dim">ClientHello</span>, the server name, the JA3/JA4 fingerprint, the sizes and timing of the first few packets — files the flow under <em>TLS</em>, <em>QUIC</em>, <em>DNS</em>, <em>WebRTC</em>… applies a policy — and for many, that opening verdict is the whole story.</p>
+      <h2 class="rise">How a censor actually decides</h2>
+      <p class="lead rise">A modern censor doesn't read your whole conversation. It glances at the opening of every connection — the TLS <span class="dim">ClientHello</span>, the server name, the JA3/JA4 fingerprint, the sizes and timing of the first few packets — files the flow under TLS, QUIC, DNS, WebRTC… applies a policy — and for many, that opening verdict is the whole story.</p>
       <ul>
-        <li class="rise"><b>Looking like an allowed bucket beats looking like nothing.</b> Positive mimicry is the win.</li>
-        <li class="rise"><b>“Uncategorizable” is now its own — increasingly punished — bucket.</b> High-entropy, unclassifiable traffic gets throttled or dropped.</li>
-        <li class="rise"><b>So all the leverage is in the opening</b> — which is also, conveniently, cheap: a few hundred bytes, once per connection.</li>
+        <li class="rise"><b>Positive mimicry.</b> Resembling an allowed category works. Resembling nothing in particular does not.</li>
+        <li class="rise"><b>Unclassifiable is its own category.</b> High-entropy traffic with no recognisable shape gets throttled or dropped on principle, and increasingly so.</li>
+        <li class="rise"><b>The leverage sits in the opening.</b> Which is also the cheap part to change: a few hundred bytes, once per connection.</li>
       </ul>
     </div>
   </div>
@@ -81,9 +81,9 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♟</span><span class="no">02</span><div class="ann">a calculated opening, anchored at <span class="s">genuine Chrome</span></div></div>
     <div class="body">
-      <h2 class="rise">The opening <span class="it">gambit</span>.</h2>
+      <h2 class="rise">What a gambit is</h2>
       <p class="rise">A <strong>gambit</strong> shapes the opening — here, a TLS handshake, the worked example throughout: what goes in the ClientHello, how it's framed into records, and how those bytes are split across TCP segments and timed on the wire — fragmenting the hostname across a segment boundary, say, so a name-matching censor never sees it whole. The opening needn't be a ClientHello, though: the same move anchors a QUIC Initial, a DNS query, a WebRTC or HTTP opening just as well <span class="dim">(§08)</span>.</p>
-      <blockquote class="rise">Anchored at a real Chrome handshake — a fidelity floor, so you never look <em>worse</em> than genuine Chrome — then mutated outward to find a variant that slips past while a real server still accepts it.</blockquote>
+      <blockquote class="rise">Anchored at a real Chrome handshake — a fidelity floor, so the handshake is never a poorer imitation of Chrome than Chrome itself — then mutated outward to find a variant that slips past while a real server still accepts it.</blockquote>
     </div>
   </div>
 </section>
@@ -92,7 +92,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♜</span><span class="no">03</span><div class="ann">parameters, not code — shippable in hours</div></div>
     <div class="body">
-      <h2 class="rise">A gambit is <span class="it">data</span>.</h2>
+      <h2 class="rise">A strategy is a parameter set, not code</h2>
       <p class="rise">It's a portable parameter set across three layers — so a move can be reasoned about, mutated, signed, and delivered without shipping a new client.</p>
       <div class="code rise"><span class="c">// a gambit — deltas over a genuine-Chrome anchor</span>
 anchor: <span class="s">chrome-137</span>
@@ -100,7 +100,7 @@ clienthello: { <span class="k">extension_order</span>, <span class="k">grease</s
 records:     { <span class="k">size_limit</span>, <span class="k">split</span> }                       <span class="c">// how it's framed</span>
 wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundary</span>, <span class="k">delay</span> }     <span class="c">// how it hits the wire</span>
 <span class="c">// signed · versioned · anti-rollback</span></div>
-      <p class="rise">The vocabulary is wide — which extensions, in what (seeded) order; whether to GREASE, pad the hello to a length, offer post-quantum, grease or really negotiate ECH; how the hello is cut into records; where the bytes split across TCP segments and how they're timed. Each knob is a delta over the anchor, so one integer can be the whole move. <span class="dim">(This is the TLS dialect's genome; a QUIC, DNS, WebRTC, or HTTP gambit carries the layers of <em>that</em> protocol's opening instead — §08.)</span></p>
+      <p class="rise">The vocabulary is wide — which extensions, in what (seeded) order; whether to GREASE, pad the hello to a length, offer post-quantum, grease or really negotiate ECH; how the hello is cut into records; where the bytes split across TCP segments and how they're timed. Each knob is a delta over the anchor, so one integer can be the whole move. <span class="dim">(This is the TLS dialect's genome; a QUIC, DNS, WebRTC, or HTTP gambit carries the layers of that protocol's opening instead — §08.)</span></p>
       <p class="rise dim">Most moves stay <strong style="color:var(--bone)">well-formed</strong> — a different-but-valid Chrome — and run anywhere. A tagged minority reach for byte-level tricks and are reviewed before they ship. <span style="color:var(--bone)">The genome can write more than any one engine plays today</span>: the lean client now runs the well-formed moves, the framing and timing layers, and — on stock BoringSSL, no fork — explicit extension and cipher order plus session-id injection; only the last byte-exact tricks (an exact seed, padding to a length, a raw hello) still wait for the Go engine and a dedicated byte-builder.</p>
     </div>
   </div>
@@ -110,7 +110,7 @@ wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundar
   <div class="spread">
     <div class="rail rise"><span class="piece">♞</span><span class="no">04</span><div class="ann">discover once, deploy across both</div></div>
     <div class="body">
-      <h2 class="rise">One genome, <span class="it">two fleets</span>.</h2>
+      <h2 class="rise">One parameter set, two execution engines</h2>
       <p class="rise">Because a gambit is just parameters, the same one drives two different engines — and reaches two different client populations.</p>
       <div class="duo">
         <div class="chip rise"><span class="t">executor · rust</span><h3>BoringSSL</h3><p>Lean, iOS-capable, byte-exact Chrome — the engine on the lightweight client.</p></div>
@@ -124,14 +124,14 @@ wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundar
   <div class="spread">
     <div class="rail rise"><span class="piece">♛</span><span class="no">05</span><div class="ann">the server is the <span class="s">oracle</span>; no client phone-home</div></div>
     <div class="body">
-      <h2 class="rise">The book is <span class="it">discovered</span>.</h2>
-      <p class="rise">No one hand-writes the winning moves. A search — a genetic algorithm guided by a language model grounded in a corpus of known techniques — proposes and mutates gambits, reasoning about <em>why</em> the last attempt failed.</p>
-      <blockquote class="rise">A gambit works if its traffic reaches one of our servers. The server is the oracle — a connection that arrives <em>is</em> the proof.</blockquote>
+      <h2 class="rise">The repertoire is found by search</h2>
+      <p class="rise">No one hand-writes the winning moves. A search — a genetic algorithm guided by a language model grounded in a corpus of known techniques — proposes and mutates gambits, reasoning about why the last attempt failed.</p>
+      <blockquote class="rise">A gambit works if its traffic reaches one of our servers. The server is the oracle — a connection that arrives is the proof.</blockquote>
       <ul>
         <li class="rise"><b>Fitness is server-side.</b> Candidates run head-to-head across comparable users; whichever reaches more, wins.</li>
-        <li class="rise"><b>Servers rotate.</b> So a blocked <em>address</em> looks different from a blocked <em>move</em> — search and fleet co-evolve.</li>
-        <li class="rise"><b>Honest fitness.</b> Reward getting through; penalize standing out — a move that wins by becoming a new anomaly is no win.</li>
-        <li class="rise"><b>It never ends.</b> The censor adapts, so the repertoire adapts with it.</li>
+        <li class="rise"><b>Servers rotate.</b> So a blocked address can be told apart from a blocked strategy — search and fleet co-evolve.</li>
+        <li class="rise"><b>Fitness penalises standing out.</b> Reward getting through and penalise becoming conspicuous. A strategy that wins by creating a new anomaly has not won.</li>
+        <li class="rise"><b>There is no end state.</b> The censor adapts, so the repertoire has to keep moving.</li>
       </ul>
     </div>
   </div>
@@ -141,7 +141,7 @@ wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundar
   <div class="spread">
     <div class="rail rise"><span class="piece">♝</span><span class="no">06</span><div class="ann">power where it pays, fidelity where it counts</div></div>
     <div class="body">
-      <h2 class="rise">Keep fidelity <span class="it">native</span>.</h2>
+      <h2 class="rise">Why the fingerprint code stays native</h2>
       <p class="rise">The parts that must look byte-exact — the real TLS fingerprint — stay in native, audited code, where they can be exact and stay current. Most evasion is a recombination of those vetted building blocks; a sandboxed module is held in reserve for genuinely novel logic.</p>
     </div>
   </div>
@@ -151,10 +151,10 @@ wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundar
   <div class="spread">
     <div class="rail rise"><span class="piece">♙</span><span class="no">07</span><div class="ann">opening theory — the rest is a <span class="s">different game</span></div></div>
     <div class="body">
-      <h2 class="rise">Where the move <span class="it">ends</span>.</h2>
+      <h2 class="rise">Where a gambit stops</h2>
       <p class="rise">A gambit shapes the opening, and only the opening — the hello, its records, the first few segments. Once the handshake completes the gambit is silent; the rest of the connection runs as the transport sees fit.</p>
       <p class="rise">That's the wager. A censor files its verdict on the first few hundred bytes; if the opening passes, the opening was the game. Shaping the long tail is expensive and high-volume, and the opening is cheap — a few hundred bytes, once. So the book is opening theory: it spends its moves where the verdict is made, and leaves the middlegame to the transport.</p>
-      <blockquote class="rise">The door to the middlegame is left ajar — room reserved for post-opening moves, unused for now — for the day a censor learns to read past the opening.</blockquote>
+      <blockquote class="rise">Room is reserved for post-opening moves, unused for now, against the day a censor learns to read past the opening.</blockquote>
     </div>
   </div>
 </section>
@@ -163,9 +163,9 @@ wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundar
   <div class="spread">
     <div class="rail rise"><span class="piece">♘</span><span class="no">08</span><div class="ann">the board is wider than <span class="s">one protocol</span></div></div>
     <div class="body">
-      <h2 class="rise">Other openings, other <span class="it">ports</span>.</h2>
+      <h2 class="rise">Beyond TLS: other protocols, other ports</h2>
       <p class="rise">The opening a censor reads isn't always a TLS hello — it's whatever the protocol leads with, and the verdict lands on that opening just the same. A <strong>QUIC</strong> Initial packet, its ClientHello buried in encrypted crypto frames. A <strong>DNS</strong> query — resolution itself, the thing every connection needs first. A <strong>WebRTC</strong> call's STUN binding and DTLS handshake, the shape of every video meeting. An <strong>HTTP</strong> request that can ride a CDN it shares with half the web. A remote-desktop or mail session that opens in the clear before it upgrades. Each is a board the censor has its own reasons not to wall off — block it and you block the real thing that lives there.</p>
-      <p class="rise">So the repertoire generalizes past TLS: a gambit need not be a ClientHello. Anchor at a genuine opening of <em>that</em> protocol, mutate outward, and let the same discovered book — signed, versioned, scored by what reaches the server — find the moves. TLS is simply the dialect we play first; QUIC, DNS, WebRTC, and HTTP are the same game on a wider board. The protocol, and the <strong>port</strong> it speaks on, become part of the move — chosen for the company they keep.</p>
+      <p class="rise">So the repertoire generalizes past TLS: a gambit need not be a ClientHello. Anchor at a genuine opening of that protocol, mutate outward, and let the same discovered book — signed, versioned, scored by what reaches the server — find the moves. TLS is simply the dialect we play first; QUIC, DNS, WebRTC, and HTTP are the same game on a wider board. The protocol, and the <strong>port</strong> it speaks on, become part of the move — chosen for the company they keep.</p>
     </div>
   </div>
 </section>
@@ -174,7 +174,7 @@ wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundar
   <div class="spread">
     <div class="rail rise"><span class="piece">⚐</span><span class="no">09</span><div class="ann">from a fragment to a living book</div></div>
     <div class="body">
-      <h2 class="rise">The <span class="it">line</span>.</h2>
+      <h2 class="rise">Roadmap</h2>
       <div class="line-moves">
         <div class="mv done rise"><span class="n">P1</span><span class="x">Shape the opening on the wire — SNI-boundary fragmentation + timing. <span class="s">built</span></span></div>
         <div class="mv done rise"><span class="n">P2</span><span class="x">The signed gambit genome + the ClientHello knobs. <span class="s">built</span></span></div>
@@ -200,7 +200,7 @@ wire:        { <span class="k">segment_split</span>: <span class="b">sni_boundar
       <a href="modules.html">Write a module</a>
       <a href="https://github.com/getlantern">github.com/getlantern</a>
     </div>
-    <p class="fine">Specific live strategies are deliberately omitted: the repertoire is meant to be polymorphic and ever-changing. This page describes the <em>approach</em>, not the moves currently on the board.</p>
+    <p class="fine">Specific live strategies are deliberately omitted: the repertoire is meant to be polymorphic and ever-changing. This page describes the approach, not the moves currently on the board.</p>
   </div>
 </footer>
 

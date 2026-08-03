@@ -110,8 +110,8 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♖</span><span class="no">01</span><div class="ann">the operating system and the transport want <span class="b">different things</span></div></div>
     <div class="body">
-      <h2 class="rise">The <span class="it">gap</span>.</h2>
-      <p class="lead rise">Capture a device's traffic and the operating system hands you a firehose of raw IP packets — headers, sequence numbers, retransmissions, fragments, the lot. Hand those to a proxy transport and it has no idea what to do with them. A transport wants two things: <em>where is this going</em>, and <em>what are the bytes</em>.</p>
+      <h2 class="rise">What the OS provides, and what a transport needs</h2>
+      <p class="lead rise">Capture a device's traffic and the operating system hands you a firehose of raw IP packets — headers, sequence numbers, retransmissions, fragments, the lot. Hand those to a proxy transport and it has no idea what to do with them. A transport wants two things: where is this going, and what are the bytes.</p>
       <p class="rise">Nothing bridges that gap for free. Something has to speak enough TCP/IP to terminate a connection locally — to watch a SYN go by, decide that a connection is being opened, complete the handshake on the application's behalf, reassemble the segments into an ordered byte stream, and remember where the application actually meant to send it. Only then is there a conversation to proxy.</p>
       <p class="rise">That machinery is the least glamorous part of a circumvention tool and the part most likely to decide whether it is usable. Everything on the <a href="index.html">narrative page</a> — the gambit, the genome, the discovery loop — happens in the last few inches of this pipeline. This chapter is the pipeline.</p>
     </div>
@@ -122,8 +122,8 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♗</span><span class="no">02</span><div class="ann">one path, six stages, one <span class="s">shaped opening</span></div></div>
     <div class="body">
-      <h2 class="rise">Packet to <span class="it">opening</span>.</h2>
-      <p class="rise">The whole client is one path. Each stage changes what the data <em>is</em>, and hands the next stage something narrower.</p>
+      <h2 class="rise">The six stages</h2>
+      <p class="rise">The whole client is one path. Each stage changes what the data is, and hands the next stage something narrower.</p>
 
       <div class="spine rise">
         <div class="stg">
@@ -145,22 +145,22 @@
           <div class="nm">flow</div>
           <div class="col">
             <span class="form">stream + intent</span>
-            <p><b>The unit of work.</b> A source, an <em>original destination</em> — the address the application actually dialed, which the netstack has to preserve because the packets were redirected — and a byte stream. Everything downstream is written against this and knows nothing about packets.</p>
-            <p>When DNS is being handled locally, the destination may be a synthetic address that maps back to a <em>name</em>. Carrying the name rather than an IP matters: it lets the exit resolve, and it's what the routing rules match on.</p>
+            <p><b>The unit of work.</b> A source, an original destination — the address the application actually dialed, which the netstack has to preserve because the packets were redirected — and a byte stream. Everything downstream is written against this and knows nothing about packets.</p>
+            <p>When DNS is being handled locally, the destination may be a synthetic address that maps back to a name. Carrying the name rather than an IP matters: it lets the exit resolve, and it's what the routing rules match on.</p>
           </div>
         </div>
         <div class="stg">
           <div class="nm">router</div>
           <div class="col">
             <span class="form">verdict</span>
-            <p><b>Per flow, one of four answers</b> — proxy it, dial it directly, dial it directly <em>with circumvention</em>, or drop it. Matched on domain, IP, geography, port, and process. <a href="#verdicts">§04</a>.</p>
+            <p><b>Per flow, one of four answers</b> — proxy it, dial it directly, dial it directly with circumvention, or drop it. Matched on domain, IP, geography, port, and process. <a href="#verdicts">§04</a>.</p>
           </div>
         </div>
         <div class="stg">
           <div class="nm">transport</div>
           <div class="col">
             <span class="form">framed bytes</span>
-            <p><b>The pluggable slot.</b> One trait — <em>dial a target, return a stream</em> — behind which sit a plain tunnel, AnyTLS, Shadowsocks, Hysteria2, a DNS tunnel, a domain-fronted meek path, and sandboxed WebAssembly modules. <a href="#slot">§05</a>.</p>
+            <p><b>The pluggable slot.</b> One trait — dial a target, return a stream — behind which sit a plain tunnel, AnyTLS, Shadowsocks, Hysteria2, a DNS tunnel, a domain-fronted meek path, and sandboxed WebAssembly modules. <a href="#slot">§05</a>.</p>
           </div>
         </div>
         <div class="stg">
@@ -182,7 +182,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♞</span><span class="no">03</span><div class="ann">write the TCP, or <span class="s">borrow the kernel's</span></div></div>
     <div class="body">
-      <h2 class="rise">Two ways to terminate a <span class="it">connection</span>.</h2>
+      <h2 class="rise">Two ways to terminate a connection</h2>
       <p class="rise">The netstack stage has two implementations, and the choice between them is more interesting than it looks.</p>
 
       <div class="duo">
@@ -196,9 +196,9 @@
 
       <p class="rise">The pathology is <strong>CPU-bound</strong>, so its severity scales inversely with how fast the processor is. On Apple silicon the userspace stack held 0.268 Gb/s across four concurrent streams — twice the floor measured on the small server, at the fastest link we could put in front of it. The regime that justifies the kernel stack may simply not exist on a modern desktop.</p>
 
-      <p class="rise">Which inverts the usual instinct. The case for borrowing the kernel's TCP is <em>strongest where CPUs are weakest</em> — phones, cheap hardware, battery-sensitive devices — and weakest on exactly the developer laptops where this kind of work normally gets benchmarked and declared a win.</p>
+      <p class="rise">Which inverts the usual instinct. The case for borrowing the kernel's TCP is strongest where CPUs are weakest — phones, cheap hardware, battery-sensitive devices — and weakest on exactly the developer laptops where this kind of work normally gets benchmarked and declared a win.</p>
 
-      <div class="note warn rise"><b>So it isn't the default.</b> Not on any platform. Each one is gated behind a specific unmet condition — a Linux reverse-path-filtering interaction, an unmeasured advantage on macOS, an open UDP packet-loss defect on Android, an unwritten implementation on Windows, and, on iOS, a permanent one: there is no kernel tun to redirect to, so the technique has nothing to redirect <em>to</em>. It ships, it is selectable, and it stays off until a platform's gate actually passes. An architecture is allowed to have a faster path it does not yet trust.</div>
+      <div class="note warn rise"><b>So it isn't the default.</b> Not on any platform. Each one is gated behind a specific unmet condition — a Linux reverse-path-filtering interaction, an unmeasured advantage on macOS, an open UDP packet-loss defect on Android, an unwritten implementation on Windows, and, on iOS, a permanent one: there is no kernel tun to redirect to, so the technique has nothing to redirect to. It ships, it is selectable, and it stays off until a platform's gate actually passes. An architecture is allowed to have a faster path it does not yet trust.</div>
     </div>
   </div>
 </section>
@@ -207,19 +207,19 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♛</span><span class="no">04</span><div class="ann">not everything should go through the <span class="s">tunnel</span></div></div>
     <div class="body">
-      <h2 class="rise">Four <span class="it">verdicts</span>.</h2>
+      <h2 class="rise">The four routing verdicts</h2>
       <p class="rise">Routing every packet through a proxy is slow, expensive, and often counterproductive — it makes local services unreachable and pushes traffic through a distant exit that had no reason to go there. So each flow gets judged on its own.</p>
 
       <div class="verdicts rise">
         <div class="vd"><span class="k">proxy</span><p>Through the pool, to an exit. The default, and what everything else is measured against.</p></div>
         <div class="vd sig"><span class="k">direct</span><p>Dial it here, on a protected socket that skips the tunnel. Plain connection, no tricks — for traffic that was never blocked.</p></div>
-        <div class="vd sig"><span class="k">proxyless</span><p>Dial it here <em>and</em> get through: un-poisoned resolution plus a shaped opening handshake. No proxy, no exit hop, no bandwidth cost — the censor is defeated on the direct path itself.</p></div>
+        <div class="vd sig"><span class="k">proxyless</span><p>Dial it here, and still get through: un-poisoned resolution plus a shaped opening handshake. No proxy, no exit hop, no bandwidth cost — the censor is defeated on the direct path itself.</p></div>
         <div class="vd red"><span class="k">reject</span><p>Drop it. Ads, malware, phishing.</p></div>
       </div>
 
       <p class="rise"><strong>Proxyless is the interesting one</strong>, and it's deliberately not a variant of "direct." Direct means a plain connection with no cleverness; quietly redefining it would change the behaviour of every rule already written. Proxyless is its own verdict: the site is blocked, but blocked in a way that opening-shaping alone can beat, so no exit server needs to carry the bytes at all. It is the same book from the <a href="index.html">narrative page</a>, played without a proxy behind it.</p>
 
-      <p class="rise dim">The catch is that the right shaping is network-specific — what defeats one carrier's middlebox is noise on another. So a proven strategy is remembered against a <em>fingerprint of the network it was proven on</em>, and re-derived when that changes. The fingerprint costs nothing to take: open a UDP socket toward a documentation-only address that will never be routed, and read back which local address the kernel picked. Nothing is transmitted; it is a route lookup with a socket API.</p>
+      <p class="rise dim">The catch is that the right shaping is network-specific — what defeats one carrier's middlebox is noise on another. So a proven strategy is remembered against a fingerprint of the network it was proven on, and re-derived when that changes. The fingerprint costs nothing to take: open a UDP socket toward a documentation-only address that will never be routed, and read back which local address the kernel picked. Nothing is transmitted; it is a route lookup with a socket API.</p>
     </div>
   </div>
 </section>
@@ -228,8 +228,8 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♝</span><span class="no">05</span><div class="ann">one trait, many <span class="s">wire protocols</span></div></div>
     <div class="body">
-      <h2 class="rise">The transport <span class="it">slot</span>.</h2>
-      <p class="rise">Everything below the router is one interface: <em>dial this target, give me back a stream</em>. That narrowness is what makes the repertoire possible — a new wire protocol is a new implementation of one trait, not a change to the client.</p>
+      <h2 class="rise">The transport interface</h2>
+      <p class="rise">Everything below the router is one interface: dial this target, return a stream. That narrowness is what makes the repertoire possible — a new wire protocol is a new implementation of one trait, not a change to the client.</p>
       <div class="code rise"><span class="c">// the entire contract every wire protocol implements</span>
 <span class="k">async fn</span> dial(&amp;<span class="k">self</span>, target: SocketAddr) -&gt; Result&lt;BoxedStream&gt;;
 <span class="c">// …plus an opt-in variant that carries a *domain* to the exit,
@@ -245,7 +245,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♚</span><span class="no">06</span><div class="ann">pass the <span class="b">descriptor</span>, never the packets</div></div>
     <div class="body">
-      <h2 class="rise">The line that never <span class="it">moves</span>.</h2>
+      <h2 class="rise">The control plane and the data plane</h2>
       <p class="rise">A shipping client is two processes. The privileged one owns the tunnel device and the routing table. The unprivileged one is the user interface — large, frequently updated, exposed to whatever the user clicks. You do not want the second running with the powers of the first.</p>
       <blockquote class="rise">The packet path never crosses a process boundary. Hand over the file descriptor once, not the packets.</blockquote>
       <p class="rise">So the split is drawn along the <strong>control plane</strong>, not the data plane. What crosses between processes is commands, status, and logs — a few messages a second. What never crosses is traffic. Shipping packets over a socket to another process would double-copy every one of them and spend the entire performance budget on ceremony. Whichever process owns the tunnel also runs the netstack and the transports; the core is written so it doesn't know or care which process that is.</p>
@@ -258,7 +258,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♘</span><span class="no">07</span><div class="ann">the same spine, five <span class="s">different doorways</span></div></div>
     <div class="body">
-      <h2 class="rise">Five ways in, one <span class="it">core</span>.</h2>
+      <h2 class="rise">Five platforms, one core</h2>
       <p class="rise">Every platform hands you packets differently and disagrees about who is allowed to ask. Only the first stage of the spine changes.</p>
       <div class="scrollx rise">
       <table class="abi">
@@ -272,7 +272,7 @@
         </tbody>
       </table>
       </div>
-      <div class="note rise"><b>A worked example of why this is fussy.</b> On Android the kernel stack initialized cleanly and forwarded nothing — 100% loss, no error anywhere. The redirect listener had been bound to the tunnel's <em>address</em> but not to the tunnel <em>device</em>, and Linux needs both before it will deliver. One socket option. It presented, from every angle available to the user, as a censor blocking the connection.</div>
+      <div class="note rise"><b>A worked example of why this is fussy.</b> On Android the kernel stack initialized cleanly and forwarded nothing — 100% loss, no error anywhere. The redirect listener had been bound to the tunnel's address but not to the tunnel device itself, and Linux needs both before it will deliver. One socket option. It presented, from every angle available to the user, as a censor blocking the connection.</div>
     </div>
   </div>
 </section>
@@ -281,7 +281,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">⚐</span><span class="no">08</span><div class="ann">every byte ships to <span class="s">every user</span></div></div>
     <div class="body">
-      <h2 class="rise">The <span class="it">budget</span>.</h2>
+      <h2 class="rise">The size budget</h2>
       <p class="rise">A circumvention client is downloaded by people on metered connections, over links that are actively hostile, sometimes passed between phones by hand. Size is a feature. The target is under three megabytes stripped, and it is enforced rather than hoped for: aggressive optimization for size, fat link-time optimization, one codegen unit, symbols stripped.</p>
       <p class="rise">That budget is also an architectural constraint, and it does real work. It rules out pulling in a second TLS implementation, or a heavyweight HTTP client, or the kind of transitive dependency tree that arrives with a C library attached. When a design decision is close, the smaller one usually wins — and the discipline of justifying every dependency is most of what keeps the attack surface of a security tool honest.</p>
     </div>

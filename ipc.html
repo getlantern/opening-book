@@ -102,7 +102,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♚</span><span class="no">01</span><div class="ann">the UI is the <span class="b">largest attack surface</span> you ship</div></div>
     <div class="body">
-      <h2 class="rise">Why <span class="it">two</span>.</h2>
+      <h2 class="rise">Why two processes</h2>
       <p class="lead rise">Creating a tunnel device and editing the routing table requires root, a Linux capability, or Administrator. A user interface is the biggest, most frequently updated, most exposed thing in the product — web content, an update channel, whatever the user clicks. Running the second with the powers of the first is the whole problem in one sentence.</p>
       <p class="rise">So a shipping client is two processes: a small privileged service that owns the tunnel, and an unprivileged client that draws the window. They frequently run as <strong>different users</strong> — a system service versus the logged-in human — which makes the channel between them a local privilege-escalation target and not merely an internal detail.</p>
       <p class="rise">Android is the exception worth naming: the platform already puts the VPN in a system-managed service inside the same app sandbox, so there is no cross-user split to defend. The other platforms all have one, and each provides its own native way to check who is calling.</p>
@@ -114,7 +114,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♜</span><span class="no">02</span><div class="ann">one descriptor, once — <span class="b">never a packet</span></div></div>
     <div class="body">
-      <h2 class="rise">What crosses, and what <span class="it">never</span> does.</h2>
+      <h2 class="rise">What crosses the boundary</h2>
       <p class="rise">The split is drawn along the control plane. This is the rule the whole design hangs from, and it is worth being blunt about because the alternative is so tempting to write.</p>
 
       <div class="ledger rise">
@@ -124,7 +124,7 @@
             <li>Commands — connect, disconnect, reconfigure</li>
             <li>Status, state, and metrics</li>
             <li>Log and event streams</li>
-            <li>A user-entered secret, submitted <em>once</em></li>
+            <li>A user-entered secret, submitted once</li>
             <li>On Linux, optionally: the tunnel <strong>file descriptor</strong> — one time</li>
           </ul>
         </div>
@@ -150,7 +150,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♟</span><span class="no">03</span><div class="ann">small enough to read in an <span class="s">afternoon</span></div></div>
     <div class="body">
-      <h2 class="rise">The <span class="it">wire</span>.</h2>
+      <h2 class="rise">The wire protocol</h2>
       <p class="rise">A local channel between two processes you ship together does not need a general-purpose RPC framework, and pulling one in would cost more in binary size and dependency surface than the entire protocol is worth. So it's about as small as a protocol gets.</p>
 
       <div class="frame rise">
@@ -176,7 +176,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♛</span><span class="no">04</span><div class="ann">connecting is not the same as being <span class="b">allowed</span></div></div>
     <div class="body">
-      <h2 class="rise">Who is <span class="it">asking</span>.</h2>
+      <h2 class="rise">Authenticating the caller</h2>
       <p class="rise">The privileged side must never trust a peer merely because it managed to connect. Filesystem permissions on the socket are a useful layer and not an answer — they are easy to get subtly wrong at install time, and on some platforms they are advisory about who may open a path rather than who may command a daemon. Each platform provides a real mechanism, and the code uses it explicitly.</p>
 
       <div class="scrollx rise">
@@ -201,7 +201,7 @@
   <div class="spread">
     <div class="rail rise"><span class="piece">♞</span><span class="no">05</span><div class="ann">the tunnel outlives the <span class="s">window</span></div></div>
     <div class="body">
-      <h2 class="rise">Dying <span class="it">well</span>.</h2>
+      <h2 class="rise">When one side dies</h2>
       <p class="rise">Two processes means either one can vanish — crashed, updated, killed by the user, killed by the system. The interesting design work is almost entirely in what happens then.</p>
       <ul>
         <li class="rise"><b>The service is the source of truth.</b> The interface is a view, not a replica. On every connect and reconnect it asks for full status and re-syncs, rather than assuming its picture survived the gap. State that lives only in the UI is state that lies after a restart.</li>
