@@ -18,3 +18,8 @@
 
 /assets/*
   Cache-Control: public, max-age=3600
+
+# Cloudflare Pages sniffed sitemap.xml as text/html, which can stop a crawler parsing it.
+# Set it explicitly rather than relying on extension detection.
+/sitemap.xml
+  Content-Type: application/xml; charset=utf-8
