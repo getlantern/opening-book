@@ -139,46 +139,69 @@ h1 .vi{color:var(--violet)}
 }
 
 /* ---- THE BREACH ----
-   A wall seen head-on, torn open, lit from behind. Inline SVG so it themes from the same palette
-   as everything else and stays sharp at any size; the motion is CSS so it can be switched off
-   wholesale for prefers-reduced-motion.
+   After Banksy's 2005 trompe-l'oeil on the West Bank barrier: a section of concrete painted as
+   though broken open, with a bright, ordinary place visible through the gap. The force of that
+   image is its quiet — it is a *view*, not an explosion. An earlier attempt here was a starburst
+   with lens flare and blast debris, which is the opposite register and read as stock artwork.
 
-   Layer order is load-bearing and not obvious: the glow sits BEHIND the wall so it reads as light
-   from the far side, and the rays sit IN FRONT so the light appears to spill toward the viewer.
-   Swap those two and the whole thing flattens into a sticker. */
+   So: cold grey slabs, a fractured opening, and warm light from a landscape on the far side.
+   Nothing bursts. The only motion is the far-side lights and a few packets drifting out.
+
+   Inspired by, not a reproduction of, that work — the geometry here is generated. */
 .breach{position:relative; width:100%}
-/* Clipped, not visible: the rays are masked to fade before the frame, so nothing needs to
-   paint outside — and painting outside made the element overflow the viewport on a phone. */
+/* No rounded corners and no drop shadow: those made it read as a UI card sitting on the page
+   rather than as a wall the page is looking at. It is a crop of something larger. */
 .breach-svg{display:block; width:100%; height:auto; overflow:hidden}
 
-.b-glow{transform-origin:296px 282px; animation:b-breathe 7s ease-in-out infinite}
-.b-core{transform-origin:296px 282px; animation:b-flare 7s ease-in-out infinite}
-.b-rays{transform-origin:296px 282px; animation:b-turn 62s linear infinite, b-shimmer 7s ease-in-out infinite}
-@keyframes b-breathe{0%,100%{transform:scale(1);opacity:.92}50%{transform:scale(1.055);opacity:1}}
-@keyframes b-flare  {0%,100%{transform:scale(.97);opacity:.85}50%{transform:scale(1.05);opacity:1}}
-@keyframes b-turn   {to{transform:rotate(360deg)}}
-@keyframes b-shimmer{0%,100%{opacity:.72}50%{opacity:1}}
+/* Light on the far side shifts slowly, the way daylight does. Very low amplitude: a wall that
+   visibly pulses stops reading as concrete. */
+/* No glow on the concrete. The reference wall is flat and unlit; light spilling onto it washes
+   out the only thing carrying the image, which is saturated colour against dead grey. */
 
-/* Two bricks knocked loose. Small amplitude on purpose — masonry that visibly wobbles reads as
-   a cartoon. */
-.b-debris .d0{animation:b-drift0 9s ease-in-out infinite}
-.b-debris .d1{animation:b-drift1 11s ease-in-out infinite}
-@keyframes b-drift0{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(4px,-3px) rotate(2.5deg)}}
-@keyframes b-drift1{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-3px,4px) rotate(-2deg)}}
+/* Distant lights, flickering out of step with each other. */
+.b-lights .l0{animation:b-twinkle 4.3s ease-in-out infinite}
+.b-lights .l1{animation:b-twinkle 5.7s ease-in-out .6s infinite}
+.b-lights .l2{animation:b-twinkle 6.9s ease-in-out 1.3s infinite}
+.b-lights .l3{animation:b-twinkle 5.1s ease-in-out 2.0s infinite}
+.b-lights .l4{animation:b-twinkle 7.5s ease-in-out .9s infinite}
+.b-lights .l5{animation:b-twinkle 4.9s ease-in-out 2.7s infinite}
+@keyframes b-twinkle{0%,100%{opacity:.35}50%{opacity:1}}
 
-/* Packets escaping through the gap: out of the light, past the wall, away. Three paths and
-   staggered delays so the stream never pulses in lockstep. */
-.b-stream .p{offset-path:path("M296 282 L560 214"); offset-rotate:0deg; opacity:0}
-.b-stream .p3,.b-stream .p4{offset-path:path("M296 282 L566 306")}
-.b-stream .p5,.b-stream .p6{offset-path:path("M296 282 L548 402")}
-.b-stream .p0{animation:b-esc 3.4s linear infinite}
-.b-stream .p1{animation:b-esc 3.4s linear .49s infinite}
-.b-stream .p2{animation:b-esc 3.4s linear .97s infinite}
-.b-stream .p3{animation:b-esc 4.1s linear .30s infinite}
-.b-stream .p4{animation:b-esc 4.1s linear 1.4s infinite}
-.b-stream .p5{animation:b-esc 3.8s linear .80s infinite}
-.b-stream .p6{animation:b-esc 3.8s linear 2.1s infinite}
-@keyframes b-esc{0%{offset-distance:0%;opacity:0}13%{opacity:1}83%{opacity:1}100%{offset-distance:100%;opacity:0}}
+/* Sparks lifting out of the gap: embers off a bonfire, not packets in a diagram. Each rises
+   on its own wandering curve, flickering out of step, so the effect never looks like a loop.
+   `offset-path` does the travel; a separate flicker animation does the life of the ember. */
+.b-sparks .s{offset-rotate:0deg; opacity:0}
+@keyframes sp-rise{
+  0%{offset-distance:0%; opacity:0; transform:scale(.5)}
+  8%{opacity:1; transform:scale(1)}
+  70%{opacity:.85}
+  100%{offset-distance:100%; opacity:0; transform:scale(.35)}}
+@keyframes sp-flick{0%,100%{filter:brightness(1)}50%{filter:brightness(1.75)}}
+
+/* The bands beyond the gap drift, slowly and out of phase. Long durations and small amplitude:
+   the glimpse should feel alive without drawing the eye away from the copy. */
+.b-aurora ellipse{transform-box:fill-box; transform-origin:center}
+.b-aurora .a0{animation:au-drift 29s ease-in-out infinite}
+.b-aurora .a1{animation:au-drift 37s ease-in-out -9s infinite}
+.b-aurora .a2{animation:au-drift 33s ease-in-out -17s infinite}
+.b-aurora .a3{animation:au-drift 41s ease-in-out -5s infinite}
+@keyframes au-drift{0%,100%{transform:translateX(-9px) scaleY(.94); opacity:.78}
+                    50%{transform:translateX(11px) scaleY(1.06); opacity:1}}
+.b-sparks .s0{offset-path:path("M321,244 Q367,154 402,44");animation:sp-rise 6.2s linear 11.9s infinite,sp-flick 0.8s ease-in-out 1.9s infinite}
+.b-sparks .s1{offset-path:path("M321,244 Q340,107 443,-60");animation:sp-rise 12.7s linear 10.2s infinite,sp-flick 1.0s ease-in-out 0.4s infinite}
+.b-sparks .s2{offset-path:path("M321,244 Q289,151 256,37");animation:sp-rise 8.2s linear 5.1s infinite,sp-flick 1.7s ease-in-out 0.2s infinite}
+.b-sparks .s3{offset-path:path("M321,244 Q284,110 223,-53");animation:sp-rise 6.2s linear 4.0s infinite,sp-flick 1.2s ease-in-out 0.2s infinite}
+.b-sparks .s4{offset-path:path("M321,244 Q338,116 342,-40");animation:sp-rise 10.7s linear 1.4s infinite,sp-flick 1.9s ease-in-out 1.8s infinite}
+.b-sparks .s5{offset-path:path("M321,244 Q281,103 199,-68");animation:sp-rise 6.8s linear 11.3s infinite,sp-flick 1.2s ease-in-out 1.1s infinite}
+.b-sparks .s6{offset-path:path("M321,244 Q324,121 316,-30");animation:sp-rise 10.5s linear 8.8s infinite,sp-flick 0.9s ease-in-out 0.7s infinite}
+.b-sparks .s7{offset-path:path("M321,244 Q351,134 464,0");animation:sp-rise 8.9s linear 3.6s infinite,sp-flick 1.0s ease-in-out 1.0s infinite}
+.b-sparks .s8{offset-path:path("M321,244 Q342,118 385,-35");animation:sp-rise 8.5s linear 3.2s infinite,sp-flick 1.2s ease-in-out 1.7s infinite}
+.b-sparks .s9{offset-path:path("M321,244 Q282,131 162,-7");animation:sp-rise 9.1s linear 9.7s infinite,sp-flick 0.8s ease-in-out 1.0s infinite}
+.b-sparks .s10{offset-path:path("M321,244 Q383,153 481,42");animation:sp-rise 7.3s linear 2.3s infinite,sp-flick 1.3s ease-in-out 1.5s infinite}
+.b-sparks .s11{offset-path:path("M321,244 Q361,115 383,-41");animation:sp-rise 7.2s linear 2.1s infinite,sp-flick 1.9s ease-in-out 0.7s infinite}
+.b-sparks .s12{offset-path:path("M321,244 Q299,110 282,-54");animation:sp-rise 8.2s linear 6.0s infinite,sp-flick 1.4s ease-in-out 1.4s infinite}
+.b-sparks .s13{offset-path:path("M321,244 Q346,121 414,-30");animation:sp-rise 9.4s linear 6.3s infinite,sp-flick 1.3s ease-in-out 0.4s infinite}
+.b-sparks .s14{offset-path:path("M321,244 Q325,160 328,58");animation:sp-rise 6.9s linear 9.5s infinite,sp-flick 1.6s ease-in-out 0.1s infinite}
 
 /* ---- the adaptive motif: the same payload, re-framed on every pass ----
    Twelve cells; four of them widen a gap in a staggered loop, so the split point walks along
@@ -511,14 +534,11 @@ footer .fine em{color:var(--dim)}
   html{scroll-behavior:auto}
   .rise{opacity:1;transform:none;transition:none}
   .cells i,.cells i::after,.sweep::after{animation:none!important}
-  /* The breach animates continuously — it has to stop outright, not merely not replay.
-     The graphic still reads correctly frozen: the light, the ragged edge and the escaped
-     packets are all static geometry. The packets are parked mid-flight so the stream is
-     still legible rather than collapsing to a point at the origin. */
-  .b-glow,.b-core,.b-rays,.b-debris rect,.b-stream .p{animation:none!important}
-  .b-stream .p{opacity:1; offset-distance:58%}
-  .b-stream .p1{offset-distance:34%} .b-stream .p2{offset-distance:82%}
-  .b-stream .p4{offset-distance:40%} .b-stream .p6{offset-distance:70%}
+  /* The fracture animates continuously, so it stops outright rather than not replaying.
+     It reads correctly frozen: the cracks, the light bleeding onto the dark and the scene
+     behind are all static. Sparks are parked part-way up so the drift is still implied. */
+  .b-aurora ellipse,.b-lights rect,.b-sparks .s{animation:none!important}
+  .b-sparks .s{opacity:.9; offset-distance:44%}
   .cells i.c1,.cells i.c2,.cells i.c3{margin-right:1.55em; border-color:var(--ember); color:var(--ember-hi)}
   /* Show the blades statically so the motif still reads as 'cut' without moving. */
   .cells i.c1::after,.cells i.c2::after,.cells i.c3::after{opacity:1; transform:scaleY(1)}

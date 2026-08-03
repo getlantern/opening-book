@@ -291,7 +291,7 @@
     <div class="rail rise"><span class="piece">⚐</span><span class="no">08</span><div class="ann">every byte ships to <span class="s">every user</span></div></div>
     <div class="body">
       <h2 class="rise">The size budget</h2>
-      <p class="rise">A circumvention client is downloaded by people on metered connections, over links that are actively hostile, sometimes passed between phones by hand. Size is a feature. The target is under three megabytes stripped, and it is enforced rather than hoped for: aggressive optimization for size, fat link-time optimization, one codegen unit, symbols stripped.</p>
+      <p class="rise">A circumvention client is downloaded by people on metered connections, over links that are actively hostile, sometimes passed between phones by hand. Size is treated as a feature rather than an outcome: the release profile is tuned for it, with aggressive size optimisation, fat link-time optimisation, a single codegen unit and symbols stripped.</p>
       <p class="rise">That budget is also an architectural constraint, and it does real work. It rules out pulling in a second TLS implementation, or a heavyweight HTTP client, or the kind of transitive dependency tree that arrives with a C library attached. When a design decision is close, the smaller one usually wins — and the discipline of justifying every dependency is most of what keeps the attack surface of a security tool honest.</p>
     </div>
   </div>
