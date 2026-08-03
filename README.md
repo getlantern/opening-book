@@ -1,24 +1,61 @@
-# Opening Book
+# spark-site
 
-> Censorship decides in the opening of the flow. So we made the opening the whole game.
+The public site for **Spark** — a from-scratch, multi-protocol VPN tunnel in Rust.
 
-**Opening Book** is an approach to internet censorship circumvention built on one fact: a modern
-censor classifies each connection from the opening of the flow — the TLS ClientHello, the server
-name, the JA3/JA4 fingerprint, the sizes and timing of the first few packets — then applies a policy.
-For many systems that opening verdict is the whole story.
+**https://spark.lantern.io**
 
-So the leverage is entirely in the opening. Opening Book is an **evolving, portable repertoire of
-opening moves** ("gambits"): shape the ClientHello, its record framing, and its segment/timing —
-anchored at a genuine Chrome handshake, expressed as a signed parameter set that runs on two engines
-(BoringSSL in Rust, uTLS in Go), and **discovered** against the live network with a server-side
-fitness signal.
+## What's here
 
-**The site** (a deep-dive into the approach): https://getlantern.github.io/opening-book/
+A static site: no build step, no framework. Six pages sharing one stylesheet.
 
-This is a research direction from the team behind [Lantern](https://lantern.io), not a product spec.
-Specific live strategies are deliberately omitted — the repertoire is meant to be polymorphic and
-ever-changing; this describes the *approach*, not the moves currently on the board.
+| Page | |
+|---|---|
+| `index.html` | The Spark landing page — the problem, the discovery loop, the data path, the nine transports, the privacy posture, the platforms, and a status list |
+| `book.html` | **Opening Book** — why a censor's verdict lands in the opening of a flow, and what follows from treating a handshake as a repertoire |
+| `architecture.html` | **The spine** — the six stages between a raw IP packet and a shaped handshake |
+| `dns.html` | **Five kinds of DNS** — the five separate roles DNS plays inside the client |
+| `ipc.html` | **The control plane** — what crosses the privilege boundary, and what never does |
+| `modules.html` | **Write a module** — the WebAssembly guest ABI, for contributors |
 
----
+## Editing
 
-The site is a single self-contained `index.html` (no build step), served by GitHub Pages.
+Every page is written against a shared class contract (`.spread` / `.rail` / `.body` / `.rise` /
+`.subnav` / `table.abi` / `.note`) defined in `assets/site.css`. Re-theming the site means editing
+that one file; no page needs to be touched. Keep it that way.
+
+Three typefaces, each with one job: **Bricolage Grotesque** for display and UI, **Fraunces** for
+long-form chapter prose only, **JetBrains Mono** for anything mechanical. Colour carries meaning
+rather than decoration — ember for accent, teal for *built*, violet reserved for the adaptive
+thread, dim for *planned*.
+
+Three conventions that are easy to break by accident:
+
+- **No inline `<script>`.** The CSP in `_headers` sets `script-src 'self'` with no
+  `'unsafe-inline'`, which is why page behaviour lives in `assets/site.js`. Adding an inline script
+  silently disables it in production.
+- **Status chips are not optional.** Spark is under active development. Every capability claim
+  carries `built` / `in progress` / `planned`, so a reader can tell what runs today from what is
+  merely designed. Describing unbuilt work in the present tense is the one thing this site must not
+  do.
+- **Size anything repeated in `em`, against a single `clamp()`.** A row of fixed-width cells sets
+  the min-content width of its whole column and will quietly push the page wider than a 320px
+  phone, where `overflow-x: hidden` then crops it with no scrollbar to reveal the damage. This has
+  been the cause of every layout bug the site has had.
+
+## Deploying
+
+```sh
+./deploy.sh          # builds dist/ and publishes to Cloudflare Pages
+```
+
+`build.sh` assembles `dist/` from an **explicit file list**, so nothing in the repo is uploaded by
+accident — and so any new top-level file has to be added there or it silently never ships. It fails
+the build if a page references an asset that did not make it in.
+
+`deploy.sh` pins the Cloudflare account, because this login can see more than one and a
+non-interactive deploy cannot choose between them.
+
+## On the name
+
+This repo was `opening-book` until the site grew from a single essay into the whole Spark site.
+GitHub redirects the old path. Opening Book itself lives on, at `/book`.
