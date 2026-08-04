@@ -9,18 +9,22 @@
  * they build a ladder up its face and carry on over the top; meet a small gap and they leap it;
  * and a drifting ember that passes too close sends one spinning into the air.
  *
- * A deploy hazard, recorded because it cost real time. This file is served from a content-hashed
- * path (see build.sh); a query-string bust does NOT work, because Cloudflare's edge cache for
- * /assets/* ignores the query. Worse: ask an edge node for a brand-new asset path before that
- * deployment has reached it and Pages answers with the not-found fallback — index.html, as
- * text/html, status 200 — then caches it for hours. The page still loads and this script simply
- * never runs, with nothing in the console to say so.
+ * A deploy hazard worth knowing about, because the failure is silent and lasts four hours.
  *
- * The trap has a second floor. A post-deploy check that requests the new path immediately IS the
- * thing that poisons it, so the first version of that check reliably created the failure it was
- * written to catch. deploy.sh now verifies in an order that cannot: confirm the upload on the
- * deployment-specific URL, wait for the live HTML to reference the new hash, and only then
- * request the asset itself.
+ * This file is served from a content-hashed path (see build.sh). Publishing a new hash does not
+ * make it available everywhere at once: index.html is served DYNAMIC — never cached, always from
+ * origin — so every colo starts asking for the new filename immediately, while asset lookups at
+ * that colo can still resolve against the PREVIOUS deployment for a little longer. A request
+ * landing in that window gets Pages' not-found fallback, which is index.html with status 200,
+ * and /assets/* carries a long max-age, so the colo pins that HTML under this script's URL for
+ * hours. The page still renders and this script simply never runs, with nothing in the console
+ * to say why. Any real visitor can trigger it, not just a deploy check.
+ *
+ * Because HTML and assets are cached differently, "the live HTML names the new hash" is NOT
+ * evidence the asset has propagated — an earlier version of the deploy check assumed it was, and
+ * so poisoned the very path it was verifying. deploy.sh now probes with a unique query string,
+ * which is a separate cache key and therefore cannot pin anything to the real URL, and only
+ * touches the canonical path once the probe comes back as JavaScript.
  *
  * Constraints this respects:
  *   - Same-origin file, so the strict `script-src 'self'` CSP holds.

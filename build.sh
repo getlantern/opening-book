@@ -13,11 +13,12 @@ cp -- assets/site.css assets/site.js assets/little.js assets/favicon.svg assets/
 cp -- _redirects _headers robots.txt sitemap.xml dist/
 
 # ---- cache-bust the assets that change -----------------------------------------------------
-# The hash goes in the FILENAME, not a query string. A query string does not work here:
-# Cloudflare's edge cache for /assets/* ignores it, so `site.css?v=<hash>` returned a stale
-# body for hours while the deployment-specific URL served the new one — a mobile fix shipped
-# and stayed invisible on the live domain because of exactly this. A different path is the only
-# thing a cache cannot conflate.
+# The hash goes in the FILENAME. Note the reason, because a wrong one was recorded here first:
+# it is NOT that Cloudflare ignores query strings. It does not — a unique query is a separate
+# edge cache key, verified directly. The reason is simpler and applies to every cache in the
+# path: /assets/* is served with a long max-age, so a client that already holds `site.css` will
+# keep using its copy until that expires no matter what query the HTML appends. A new filename
+# is a new URL, which nothing can have a stale copy of.
 for asset in site.css site.js little.js; do
   base=${asset%.*}; ext=${asset##*.}
   hash=$(shasum -a 256 "assets/$asset" | cut -c1-10)
