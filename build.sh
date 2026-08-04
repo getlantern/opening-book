@@ -9,7 +9,7 @@ cd "$(dirname "$0")"
 rm -rf dist
 mkdir -p dist/assets
 cp -- *.html dist/
-cp -- assets/site.css assets/site.js assets/favicon.svg assets/og.png dist/assets/
+cp -- assets/site.css assets/site.js assets/little.js assets/favicon.svg assets/og.png dist/assets/
 cp -- _redirects _headers robots.txt sitemap.xml dist/
 
 # Fail loudly if a page references an asset that did not make it into dist/.
