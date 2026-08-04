@@ -9,22 +9,25 @@
  * they build a ladder up its face and carry on over the top; meet a small gap and they leap it;
  * and a drifting ember that passes too close sends one spinning into the air.
  *
- * A deploy hazard worth knowing about, because the failure is silent and lasts four hours.
+ * A deploy hazard worth knowing about, because the failure was silent and lasted four hours.
  *
- * This file is served from a content-hashed path (see build.sh). Publishing a new hash does not
- * make it available everywhere at once: index.html is served DYNAMIC — never cached, always from
- * origin — so every colo starts asking for the new filename immediately, while asset lookups at
- * that colo can still resolve against the PREVIOUS deployment for a little longer. A request
- * landing in that window gets Pages' not-found fallback, which is index.html with status 200,
- * and /assets/* carries a long max-age, so the colo pins that HTML under this script's URL for
- * hours. The page still renders and this script simply never runs, with nothing in the console
- * to say why. Any real visitor can trigger it, not just a deploy check.
+ * This file is served from a content-hashed path (see build.sh), and for a while every new hash
+ * came back as index.html on the live domain — status 200, content-type text/html — so the page
+ * rendered and this script simply never ran, with nothing in the console to say why.
  *
- * Because HTML and assets are cached differently, "the live HTML names the new hash" is NOT
- * evidence the asset has propagated — an earlier version of the deploy check assumed it was, and
- * so poisoned the very path it was verifying. deploy.sh now probes with a unique query string,
- * which is a separate cache key and therefore cannot pin anything to the real URL, and only
- * touches the canonical path once the probe comes back as JavaScript.
+ * The cause was not caching, though it looked exactly like it. Cloudflare Pages decides how to
+ * answer an unmatched path by looking at which files a project ships: with no 404.html it infers
+ * a single-page app and serves index.html with 200. The site had no 404.html. So during the brief
+ * window after a deploy when a colo has the new HTML (served DYNAMIC, never cached) but has not
+ * yet resolved the new asset, a request for this file got a 200 — a cacheable success — and
+ * /assets/* carries a long max-age, so that HTML was pinned under this script's URL for hours.
+ * The site now ships a 404.html, which flips Pages to returning a real 404 for unmatched paths.
+ *
+ * Two corollaries. Anything that fetches an asset promptly after a deploy could trigger it, not
+ * just a person. And "the live HTML names the new hash" is not evidence the asset has propagated,
+ * because HTML and assets are cached differently — an earlier deploy check assumed it was and so
+ * poisoned the path it was verifying. deploy.sh now probes through a unique query string, which
+ * is a separate cache key, and touches the real URL only once the probe returns JavaScript.
  *
  * Constraints this respects:
  *   - Same-origin file, so the strict `script-src 'self'` CSP holds.

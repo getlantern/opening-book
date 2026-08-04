@@ -29,6 +29,12 @@ for asset in site.css site.js little.js; do
   done
 done
 
+# Refuse to ship without a 404.html. Cloudflare Pages infers not-found behaviour from the files
+# present: with no 404.html it treats the site as a single-page app and answers unmatched paths
+# with index.html and status 200 — a cacheable success that gets pinned under asset URLs. See
+# README.
+[ -e dist/404.html ] || { echo "build failed: no 404.html (see README — Pages would serve index.html with 200 for unmatched paths)" >&2; exit 1; }
+
 # Fail loudly if a page references an asset that did not make it into dist/.
 missing=0
 for f in dist/*.html; do

@@ -37,6 +37,12 @@ Three conventions that are easy to break by accident:
   carries `built` / `in progress` / `planned`, so a reader can tell what runs today from what is
   merely designed. Describing unbuilt work in the present tense is the one thing this site must not
   do.
+- **`404.html` must exist.** Cloudflare Pages infers its not-found behaviour from the files a
+  project ships: with no `404.html` it decides the site is a single-page app and answers every
+  unmatched path with `index.html` and status **200**. That is a cacheable success, and since
+  `/assets/*` is served with a long max-age, one request for a not-yet-propagated asset pins HTML
+  under that asset's URL for hours — the page renders and the script silently never runs. Deleting
+  this file re-arms that. `deploy.sh` checks for it.
 - **Size anything repeated in `em`, against a single `clamp()`.** A row of fixed-width cells sets
   the min-content width of its whole column and will quietly push the page wider than a 320px
   phone, where `overflow-x: hidden` then crops it with no scrollbar to reveal the damage. This has

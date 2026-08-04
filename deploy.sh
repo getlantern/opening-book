@@ -79,4 +79,16 @@ for ref in $REFS; do
   fi
 done
 [ "$fail" -eq 0 ] || exit 1
+
+echo "4/4 not-found behaviour"
+# A 200 here is the condition that pins HTML under asset URLs. It must be a 404.
+code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/assets/does-not-exist-$RUN.js")
+if [ "$code" = "404" ]; then
+  echo "  ok   unmatched paths return $code"
+else
+  echo "  FAIL unmatched paths return $code, not 404 — Pages is in single-page-app mode, which" >&2
+  echo "       makes every premature asset request a cacheable 200. Check that 404.html shipped." >&2
+  exit 1
+fi
+
 echo "all hashed assets verified"
