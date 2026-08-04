@@ -45,6 +45,7 @@
   var ctx = canvas.getContext('2d');
 
   var boxes = [], walls = [], figures = [], ladders = [], sparks = [];
+  var lipBox = null, groundBox = null, vanish = null, goal = null;  // the crack, and the way to it
   var W = 0, H = 0, docH = 0, FLOOR = 0, running = false, last = 0;
 
   /* ---- terrain ---------------------------------------------------------------------------- */
@@ -73,6 +74,21 @@
       if (el.offsetWidth > W * 0.96) continue;              // full-bleed things are not ledges
       boxes.push(docRect(el));
     }
+    // The crack, the foothold at it, and the ground beneath — the one place on the page where
+    // a figure can actually leave.
+    lipBox = groundBox = vanish = null;
+    var lipEl = document.querySelector('.crack-lip');
+    var gndEl = document.querySelector('.ground');
+    var brEl  = document.querySelector('.breach');
+    if (lipEl) lipBox = docRect(lipEl);
+    if (gndEl) groundBox = docRect(gndEl);
+    if (lipBox) goal = { x: (lipBox.x0 + lipBox.x1) / 2, y: lipBox.yTop };
+    if (brEl) {
+      var br = docRect(brEl);
+      // the bright middle of the opening, in the breach SVG's own proportions
+      vanish = { x: br.x0 + (br.x1 - br.x0) * 0.50, y: br.yTop + (br.yBot - br.yTop) * 0.43 };
+    }
+
     FLOOR = docH - 36;
     buildWalls();
   }
@@ -125,13 +141,22 @@
     return null;
   }
 
+  /* A ledge above and within reach. Scored on whether it actually helps: height gained, and
+     how much nearer to the break it puts you. Everyone here is going the same place. */
   function ledgeAbove(x, y) {
-    var best = null;
+    var best = null, bestScore = -1e9;
     for (var i = 0; i < walls.length; i++) {
       var w = walls[i], rise = y - w.yTop;
       if (rise < 26 || rise > LADDER_REACH) continue;
       if (x < w.x0 + 6 || x > w.x1 - 6) continue;
-      if (!best || w.yTop > best.yTop) best = w;
+      var score = rise;                                     // height is progress
+      if (goal) {
+        var here = Math.abs(x - goal.x);
+        var there = Math.abs(Math.max(w.x0 + 6, Math.min(w.x1 - 6, goal.x)) - goal.x);
+        score += (here - there) * 0.55;                     // and so is getting closer
+        if (w.yTop < goal.y - 2) score -= 40;               // no point overshooting past it
+      }
+      if (score > bestScore) { bestScore = score; best = w; }
     }
     return best;
   }
@@ -152,6 +177,16 @@
     return best;
   }
 
+  /* Is there already a ladder here? Without this check a figure that cannot make progress keeps
+     raising more beside the ones it just built, and the result is a lattice. */
+  function ladderNear(x, y) {
+    for (var i = 0; i < ladders.length; i++) {
+      var L = ladders[i];
+      if (Math.abs(L.x - x) < 22 && Math.abs(L.yBot - y) < 6) return true;
+    }
+    return false;
+  }
+
   /* A ladder needs clear air beside the thing it leans on. */
   function ladderFits(x, y, against) {
     if (x < 8 || x > W - 8) return false;
@@ -168,19 +203,51 @@
   function spawn(n) {
     figures = [];
     if (!boxes.length) return;
+
+    /* Weight the first viewport. Spread evenly over the document it gets its proportional
+       share — about a tenth on a ten-screen page — which leaves the one screen everybody
+       actually sees looking empty. */
+    var topBoxes = [];
+    for (var t = 0; t < boxes.length; t++) if (boxes[t].yTop < H) topBoxes.push(boxes[t]);
+    var nTop = topBoxes.length ? Math.max(7, Math.round(n * 0.18)) : 0;
+
     for (var i = 0; i < n; i++) {
-      var b = boxes[(Math.random() * boxes.length) | 0];
+      var b, frac;
+      if (i < nTop && topBoxes.length) {
+        // Round-robin, and spread along each ledge. Picking at random piled eight of them onto
+        // the kicker pill and left the rest of the hero bare.
+        b = topBoxes[i % topBoxes.length];
+        frac = ((Math.floor(i / topBoxes.length) + 0.5) / Math.ceil(nTop / topBoxes.length));
+        frac = Math.min(0.92, Math.max(0.08, frac + (Math.random() - 0.5) * 0.12));
+      } else {
+        b = boxes[(Math.random() * boxes.length) | 0];
+        frac = 0.08 + Math.random() * 0.84;
+      }
       figures.push({
-        x: b.x0 + 10 + Math.random() * Math.max(1, b.x1 - b.x0 - 20),
+        x: b.x0 + 8 + frac * Math.max(1, b.x1 - b.x0 - 16),
         y: b.yTop,
         dir: Math.random() < 0.5 ? -1 : 1,
         phase: Math.random() * 6.28,
         accent: CAPS[i % CAPS.length],
         state: 'walk', t: 0, idle: 2 + Math.random() * 7,
         ladder: null, target: 0, vy: 0, vx: 0, rot: 0, spin: 0, home: null,
-        jx0: 0, jy0: 0, jx1: 0, jy1: 0, jdur: 0, arc: 0
+        jx0: 0, jy0: 0, jx1: 0, jy1: 0, jdur: 0, arc: 0, tx0: 0, ty0: 0
       });
     }
+  }
+
+  /* The population is conserved: whoever goes through the crack is replaced by someone
+     arriving on the ground below, so the scene never empties. */
+  function reseed(f) {
+    var b = groundBox || boxes[(Math.random() * boxes.length) | 0];
+    if (!b) { f.state = 'walk'; f.t = 0; return; }
+    // arrive at the far end of the ground, so there is a journey to make
+    var far = goal && goal.x > (b.x0 + b.x1) / 2 ? b.x0 + 12 : b.x1 - 12;
+    f.x = far + (Math.random() - 0.5) * (b.x1 - b.x0) * 0.3;
+    f.y = b.yTop;
+    f.dir = goal ? (goal.x > f.x ? 1 : -1) : 1;
+    f.state = 'walk'; f.t = 0; f.rot = 0; f.home = null;
+    f.idle = 1 + Math.random() * 5;
   }
 
   function newSpark(atBottom) {
@@ -223,27 +290,45 @@
       if (f.state === 'walk') {
         f.phase += dt * 8.5;
         f.idle -= dt;
-        if (f.idle <= 0) {                                   // wander: stop, look up, or turn
-          f.idle = 3 + Math.random() * 9;
+
+        // Standing under the break with it in reach? Then go, right now. Waiting for the wander
+        // timer meant walking straight past the one thing everybody is trying to get to.
+        if (lipBox && f.y > lipBox.yTop + 20 && f.y - lipBox.yTop <= LADDER_REACH &&
+            f.x > lipBox.x0 - 4 && f.x < lipBox.x1 + 4 && !ladderNear(f.x, f.y)) {
+          f.state = 'build'; f.t = 0;
+          f.ladder = { x: f.x, yBot: f.y, yTop: lipBox.yTop, h: f.y - lipBox.yTop,
+                       grow: 0, life: 0, onto: lipBox };
+          ladders.push(f.ladder);
+          continue;
+        }
+        if (f.idle <= 0) {
+          f.idle = 2 + Math.random() * 5;
+          // Everyone is trying to reach the break. Head that way, mostly — a little noise so it
+          // is a crowd of individuals rather than a column on rails.
+          if (goal && Math.random() < 0.82) f.dir = goal.x > f.x ? 1 : -1;
+          else if (Math.random() < 0.3) f.dir *= -1;
+
           var up = ledgeAbove(f.x, f.y);
-          if (up && Math.random() < 0.5) {
+          // Climb whenever climbing helps; only dawdle when it does not.
+          if (up && !ladderNear(f.x, f.y) && Math.random() < 0.72) {
             f.state = 'build'; f.t = 0;
             f.ladder = { x: f.x, yBot: f.y, yTop: up.yTop, h: f.y - up.yTop,
                          grow: 0, life: 0, onto: up };
             ladders.push(f.ladder);
             continue;
           }
-          if (Math.random() < 0.4) { f.state = 'pause'; f.t = 0; continue; }
-          if (Math.random() < 0.4) f.dir *= -1;
+          if (Math.random() < 0.22) { f.state = 'pause'; f.t = 0; continue; }
         }
 
         var nx = f.x + f.dir * WALK * dt;
-        if (nx < 12 || nx > W - 12) { f.dir *= -1; continue; }
+        if (nx < 12 || nx > W - 12) { f.dir = goal ? (goal.x > f.x ? 1 : -1) : -f.dir; continue; }
 
         var ob = obstacleAt(nx, f.y);
         if (ob) {                                            // walked into the side of something
           var lx = f.dir > 0 ? ob.x0 - 7 : ob.x1 + 7;
-          if (!ladderFits(lx, f.y, ob) || f.y - ob.yTop > LADDER_REACH) { f.dir *= -1; continue; }
+          if (!ladderFits(lx, f.y, ob) || f.y - ob.yTop > LADDER_REACH || ladderNear(lx, f.y)) {
+            f.dir *= -1; continue;
+          }
           f.state = 'build'; f.t = 0;
           f.ladder = { x: lx, yBot: f.y, yTop: ob.yTop, h: f.y - ob.yTop,
                        grow: 0, life: 0, onto: ob };
@@ -320,14 +405,31 @@
         if (f.y >= f.target) { f.y = f.target; f.state = 'pause'; f.t = 0; }
 
       } else if (f.state === 'pause') {
+        // Reached the crack? Then take it.
+        if (lipBox && vanish && f.state !== 'through' &&
+            Math.abs(f.y - lipBox.yTop) < 3 && f.x > lipBox.x0 - 8 && f.x < lipBox.x1 + 8 &&
+            f.t > 0.8) {
+          f.state = 'through'; f.t = 0;
+          f.tx0 = f.x; f.ty0 = f.y;
+          continue;
+        }
         if (f.t > 0.5 + Math.random() * 0.4) { f.state = 'walk'; f.t = 0; }
+
+      } else if (f.state === 'through') {
+        // Into the light and away. Eased so they slow as they recede rather than shooting off.
+        var tp = Math.min(1, f.t / 2.6);
+        var e = tp * tp * (3 - 2 * tp);
+        f.x = f.tx0 + (vanish.x - f.tx0) * e;
+        f.y = f.ty0 + (vanish.y - f.ty0) * e;
+        if (tp >= 1) reseed(f);                             // someone new turns up below
       }
     }
 
     // an ember passing close to someone's middle launches them
     for (i = 0; i < figures.length; i++) {
       f = figures[i];
-      if (f.state === 'launch' || f.state === 'build' || f.state === 'climb') continue;
+      if (f.state === 'launch' || f.state === 'build' || f.state === 'climb' ||
+          f.state === 'through') continue;
       var cx = f.x, cy = f.y - FIG_H * 0.45;
       for (var k = 0; k < sparks.length; k++) {
         var sp = sparks[k], dx = sp.x - cx, dy = sp.y - cy;
@@ -345,7 +447,7 @@
 
     for (var j = ladders.length - 1; j >= 0; j--) {
       ladders[j].life += dt;
-      if (ladders[j].life > 30) ladders.splice(j, 1);
+      if (ladders[j].life > 18) ladders.splice(j, 1);
     }
   }
 
@@ -364,7 +466,7 @@
 
   function drawLadder(L) {
     var top = L.yBot - L.h * L.grow;
-    var fade = L.life > 25 ? Math.max(0, 1 - (L.life - 25) / 5) : 1;
+    var fade = L.life > 14 ? Math.max(0, 1 - (L.life - 14) / 4) : 1;
     ctx.save();
     ctx.globalAlpha = 0.55 * fade;
     ctx.strokeStyle = INK; ctx.lineWidth = 1.2; ctx.lineCap = 'round';
@@ -391,6 +493,12 @@
 
     ctx.save();
     ctx.translate(f.x, f.y - bob);
+    if (f.state === 'through') {                            // receding into the opening
+      var tp = Math.min(1, f.t / 2.6);
+      ctx.globalAlpha = Math.max(0, 1 - tp * tp);
+      var k = 1 - 0.86 * tp;
+      ctx.scale(k, k);
+    }
     if (f.state === 'launch') { ctx.translate(0, -h * 0.45); ctx.rotate(f.rot); ctx.translate(0, h * 0.45); }
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.strokeStyle = INK; ctx.lineWidth = 1.6;
@@ -502,7 +610,7 @@
     if (reduced) { staticScene(); return; }
     // Scale to viewports, not raw page height: sized by pixels, a long page ends up with roughly
     // one figure per screen.
-    spawn(Math.max(18, Math.min(85, Math.round((docH / H) * 6.5))));
+    spawn(Math.max(16, Math.min(70, Math.round((docH / H) * 5.5))));
     start();
   }
 
