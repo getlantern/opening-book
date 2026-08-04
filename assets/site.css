@@ -168,10 +168,16 @@ h1 .vi{color:var(--violet)}
 .ground::after{content:""; position:absolute; inset:0;
   background:linear-gradient(180deg,rgba(255,176,114,.16) 0 3px,transparent 3px);
   clip-path:inherit}
-.crack-lip{position:absolute; left:46%; width:11%; top:56%; height:8px;
-  /* Barely there: it exists so the little-people layer has a ledge to measure at the opening.
-     Drawn any stronger and it reads as a shelf bolted across the crack. */
-  border-radius:2px; background:rgba(255,196,140,.05); pointer-events:none}
+/* Two zones at the break, and the difference between them is the whole point.
+   `.crack-lip` is a wide shelf: a ladder can reach it anywhere along its length. `.crack-mouth`
+   is the actual opening, and only a figure standing in *that* can get through. Land your ladder
+   off-target and you arrive on the shelf with nowhere to go, and have to shuffle along to find
+   the gap. Both are near-invisible; they exist so the little-people layer has something to
+   measure. */
+.crack-lip{position:absolute; left:40%; width:24%; top:56%; height:8px;
+  border-radius:2px; background:rgba(255,196,140,.04); pointer-events:none}
+.crack-mouth{position:absolute; left:49.5%; width:4.5%; top:56%; height:8px;
+  border-radius:2px; background:rgba(255,222,180,.10); pointer-events:none}
 
 /* No rounded corners and no drop shadow: those made it read as a UI card sitting on the page
    rather than as a wall the page is looking at. It is a crop of something larger. */

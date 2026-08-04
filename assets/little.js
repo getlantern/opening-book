@@ -45,7 +45,7 @@
   var ctx = canvas.getContext('2d');
 
   var boxes = [], walls = [], figures = [], ladders = [], sparks = [];
-  var lipBox = null, groundBox = null, vanish = null, goal = null;  // the crack, and the way to it
+  var lipBox = null, mouthBox = null, groundBox = null, vanish = null, goal = null;
   var W = 0, H = 0, docH = 0, FLOOR = 0, running = false, last = 0;
 
   /* ---- terrain ---------------------------------------------------------------------------- */
@@ -76,13 +76,16 @@
     }
     // The crack, the foothold at it, and the ground beneath — the one place on the page where
     // a figure can actually leave.
-    lipBox = groundBox = vanish = null;
+    lipBox = mouthBox = groundBox = vanish = null;
+    var mouthEl = document.querySelector('.crack-mouth');
+    if (mouthEl) mouthBox = docRect(mouthEl);
     var lipEl = document.querySelector('.crack-lip');
     var gndEl = document.querySelector('.ground');
     var brEl  = document.querySelector('.breach');
     if (lipEl) lipBox = docRect(lipEl);
     if (gndEl) groundBox = docRect(gndEl);
-    if (lipBox) goal = { x: (lipBox.x0 + lipBox.x1) / 2, y: lipBox.yTop };
+    var tgt = mouthBox || lipBox;
+    if (tgt) goal = { x: (tgt.x0 + tgt.x1) / 2, y: tgt.yTop };
     if (brEl) {
       var br = docRect(brEl);
       // the bright middle of the opening, in the breach SVG's own proportions
@@ -406,9 +409,12 @@
 
       } else if (f.state === 'pause') {
         // Reached the crack? Then take it.
-        if (lipBox && vanish && f.state !== 'through' &&
-            Math.abs(f.y - lipBox.yTop) < 3 && f.x > lipBox.x0 - 8 && f.x < lipBox.x1 + 8 &&
-            f.t > 0.8) {
+        // Up on the shelf is not through. Only a figure standing in the opening itself can
+        // crawl in — which is what makes where you plant the ladder matter.
+        var gap = mouthBox || lipBox;
+        if (gap && vanish && f.state !== 'through' &&
+            Math.abs(f.y - gap.yTop) < 4 && f.x > gap.x0 - 2 && f.x < gap.x1 + 2 &&
+            f.t > 0.5) {
           f.state = 'through'; f.t = 0;
           f.tx0 = f.x; f.ty0 = f.y;
           continue;
@@ -416,9 +422,11 @@
         if (f.t > 0.5 + Math.random() * 0.4) { f.state = 'walk'; f.t = 0; }
 
       } else if (f.state === 'through') {
-        // Into the light and away. Eased so they slow as they recede rather than shooting off.
-        var tp = Math.min(1, f.t / 2.6);
-        var e = tp * tp * (3 - 2 * tp);
+        // Crawl in, then away. The first third barely moves — that is climbing into the gap —
+        // and only then do they recede toward the light.
+        var tp = Math.min(1, f.t / 3.4);
+        var e = tp < 0.33 ? (tp / 0.33) * 0.10               // easing through the opening
+                          : 0.10 + 0.90 * (function (u) { return u * u * (3 - 2 * u); })((tp - 0.33) / 0.67);
         f.x = f.tx0 + (vanish.x - f.tx0) * e;
         f.y = f.ty0 + (vanish.y - f.ty0) * e;
         if (tp >= 1) reseed(f);                             // someone new turns up below
@@ -493,11 +501,11 @@
 
     ctx.save();
     ctx.translate(f.x, f.y - bob);
-    if (f.state === 'through') {                            // receding into the opening
-      var tp = Math.min(1, f.t / 2.6);
-      ctx.globalAlpha = Math.max(0, 1 - tp * tp);
-      var k = 1 - 0.86 * tp;
-      ctx.scale(k, k);
+    if (f.state === 'through') {                            // crawling in, then receding
+      var tp = Math.min(1, f.t / 3.4);
+      ctx.globalAlpha = tp < 0.25 ? 1 : Math.max(0, 1 - Math.pow((tp - 0.25) / 0.75, 1.7));
+      var k = 1 - 0.90 * (tp < 0.3 ? tp * 0.5 : tp);        // barely shrinks while still in the gap
+      ctx.scale(Math.max(0.08, k), Math.max(0.08, k));
     }
     if (f.state === 'launch') { ctx.translate(0, -h * 0.45); ctx.rotate(f.rot); ctx.translate(0, h * 0.45); }
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
