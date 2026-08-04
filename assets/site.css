@@ -174,9 +174,16 @@ h1 .vi{color:var(--violet)}
    off-target and you arrive on the shelf with nowhere to go, and have to shuffle along to find
    the gap. Both are near-invisible; they exist so the little-people layer has something to
    measure. */
-.crack-lip{position:absolute; left:40%; width:24%; top:56%; height:8px;
+/* Horizontal placement is DERIVED, not eyeballed. The crack is generated, so its opening is
+   wherever the generator's undulation put it — 56.5% across the box, confirmed two ways: by
+   replaying the generator's own maths (57.0%) and by rasterising the SVG and taking the
+   brightness centroid of the opening (56.4%, brightest pixel 55.9%).
+   These were previously hand-set at ~52%, which put the passable zone a clear 22px LEFT of the
+   visible opening: ladders beside the crack let figures through and ladders on it did not.
+   If the crack art is ever regenerated, re-derive these rather than nudging them. */
+.crack-lip{position:absolute; left:44.5%; width:24%; top:56%; height:8px;
   border-radius:2px; background:rgba(255,196,140,.04); pointer-events:none}
-.crack-mouth{position:absolute; left:49.5%; width:4.5%; top:56%; height:8px;
+.crack-mouth{position:absolute; left:54.25%; width:4.5%; top:56%; height:8px;
   border-radius:2px; background:rgba(255,222,180,.10); pointer-events:none}
 
 /* No rounded corners and no drop shadow: those made it read as a UI card sitting on the page

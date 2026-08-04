@@ -25,7 +25,10 @@
 
   /* Terrain by selector rather than hand-marked elements, so new sections are inhabited without
      anyone remembering to annotate them. */
-  var LEDGE_SEL = '[data-ledge], .kicker, h1, .lede, .btn, .card, .shead h2, .row, .lp, .fig .box, .note';
+  /* The hero copy is deliberately absent: nobody stands on the headline or the kicker. In the
+     hero the only terrain is the barren ground and the shelf at the break, so everyone there is
+     working on getting through. Other sections keep their cards and rows. */
+  var LEDGE_SEL = '[data-ledge], .card, .shead h2, .row, .lp, .fig .box, .note';
 
   var CAPS = ['#ff8a3d', '#5fd4b4', '#9d7bff', '#ffb072'];     // site accents, for hats
   var FIRE = ['#fff1d2', '#ffe0a8', '#ffc98c', '#ffb072',      // embers are NOT site accents:
@@ -88,8 +91,10 @@
     if (tgt) goal = { x: (tgt.x0 + tgt.x1) / 2, y: tgt.yTop };
     if (brEl) {
       var br = docRect(brEl);
-      // the bright middle of the opening, in the breach SVG's own proportions
-      vanish = { x: br.x0 + (br.x1 - br.x0) * 0.50, y: br.yTop + (br.yBot - br.yTop) * 0.43 };
+      // The bright middle of the opening, measured from the artwork rather than guessed: the
+      // brightness centroid of the rasterised SVG lands at 56.4% / 44.8%, its brightest pixel at
+      // 55.9% / 40.9%. x was 0.50 here, which had them receding past the side of the crack.
+      vanish = { x: br.x0 + (br.x1 - br.x0) * 0.565, y: br.yTop + (br.yBot - br.yTop) * 0.425 };
     }
 
     FLOOR = docH - 36;
@@ -115,6 +120,19 @@
       }
       if (!merged) walls.push({ x0: b.x0, x1: b.x1, yTop: b.yTop, yBot: b.yBot });
     }
+  }
+
+  /* Where this one is trying to get to. Everybody wants the break, but you cannot reach it from
+     anywhere except the barren ground beneath it — so until you are standing on that, the ground
+     IS the goal. Two stages, not one. */
+  function onGround(f) {
+    return !!groundBox && Math.abs(f.y - groundBox.yTop) < 4 &&
+           f.x > groundBox.x0 - 6 && f.x < groundBox.x1 + 6;
+  }
+  function goalFor(f) {
+    if (!groundBox) return goal;
+    if (onGround(f)) return goal;                       // the opening
+    return { x: (groundBox.x0 + groundBox.x1) / 2, y: groundBox.yTop };
   }
 
   function surfaceUnder(x, y) {
@@ -146,18 +164,18 @@
 
   /* A ledge above and within reach. Scored on whether it actually helps: height gained, and
      how much nearer to the break it puts you. Everyone here is going the same place. */
-  function ledgeAbove(x, y) {
+  function ledgeAbove(x, y, aim) {
     var best = null, bestScore = -1e9;
     for (var i = 0; i < walls.length; i++) {
       var w = walls[i], rise = y - w.yTop;
       if (rise < 26 || rise > LADDER_REACH) continue;
       if (x < w.x0 + 6 || x > w.x1 - 6) continue;
       var score = rise;                                     // height is progress
-      if (goal) {
-        var here = Math.abs(x - goal.x);
-        var there = Math.abs(Math.max(w.x0 + 6, Math.min(w.x1 - 6, goal.x)) - goal.x);
+      if (aim) {
+        var here = Math.abs(x - aim.x);
+        var there = Math.abs(Math.max(w.x0 + 6, Math.min(w.x1 - 6, aim.x)) - aim.x);
         score += (here - there) * 0.55;                     // and so is getting closer
-        if (w.yTop < goal.y - 2) score -= 40;               // no point overshooting past it
+        if (w.yTop < aim.y - 2) score -= 40;                // no point overshooting past it
       }
       if (score > bestScore) { bestScore = score; best = w; }
     }
@@ -296,7 +314,7 @@
 
         // Standing under the break with it in reach? Then go, right now. Waiting for the wander
         // timer meant walking straight past the one thing everybody is trying to get to.
-        if (lipBox && f.y > lipBox.yTop + 20 && f.y - lipBox.yTop <= LADDER_REACH &&
+        if (lipBox && onGround(f) && f.y > lipBox.yTop + 20 && f.y - lipBox.yTop <= LADDER_REACH &&
             f.x > lipBox.x0 - 4 && f.x < lipBox.x1 + 4 && !ladderNear(f.x, f.y)) {
           f.state = 'build'; f.t = 0;
           f.ladder = { x: f.x, yBot: f.y, yTop: lipBox.yTop, h: f.y - lipBox.yTop,
@@ -308,10 +326,11 @@
           f.idle = 2 + Math.random() * 5;
           // Everyone is trying to reach the break. Head that way, mostly — a little noise so it
           // is a crowd of individuals rather than a column on rails.
-          if (goal && Math.random() < 0.82) f.dir = goal.x > f.x ? 1 : -1;
+          var aim = goalFor(f);
+          if (aim && Math.random() < 0.82) f.dir = aim.x > f.x ? 1 : -1;
           else if (Math.random() < 0.3) f.dir *= -1;
 
-          var up = ledgeAbove(f.x, f.y);
+          var up = ledgeAbove(f.x, f.y, aim);
           // Climb whenever climbing helps; only dawdle when it does not.
           if (up && !ladderNear(f.x, f.y) && Math.random() < 0.72) {
             f.state = 'build'; f.t = 0;
@@ -324,7 +343,11 @@
         }
 
         var nx = f.x + f.dir * WALK * dt;
-        if (nx < 12 || nx > W - 12) { f.dir = goal ? (goal.x > f.x ? 1 : -1) : -f.dir; continue; }
+        if (nx < 12 || nx > W - 12) {
+          var edgeAim = goalFor(f);
+          f.dir = edgeAim ? (edgeAim.x > f.x ? 1 : -1) : -f.dir;
+          continue;
+        }
 
         var ob = obstacleAt(nx, f.y);
         if (ob) {                                            // walked into the side of something

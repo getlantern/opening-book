@@ -4,9 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Spark — an adaptive tunnel for hostile networks</title>
-<meta name="description" content="Spark is a from-scratch, multi-protocol VPN tunnel in Rust. Nine transports, opening handshakes searched for rather than hand-written, and per-flow routing that only tunnels what has to be tunnelled." />
-<meta property="og:title" content="Spark — an adaptive tunnel for hostile networks" />
-<meta property="og:description" content="Censors classify a connection from its opening handshake. Spark makes that opening the thing to get right, with a repertoire searched for against the live network rather than written by hand." />
+<meta name="description" content="Spark is a from-scratch, multi-protocol VPN tunnel in Rust that finds its own way through censorship. Nine transports, opening handshakes searched for rather than hand-written, and per-flow routing that only tunnels what has to be tunnelled." />
+<meta property="og:title" content="Spark — a tunnel that finds its own way through censorship" />
+<meta property="og:description" content="Censors decide from the opening handshake. Spark treats that opening as a search problem: try something, see what arrives, keep what works." />
 <meta name="theme-color" content="#08090d" />
 <link rel="canonical" href="https://spark.lantern.io/">
 <meta property="og:url" content="https://spark.lantern.io/">
@@ -58,13 +58,13 @@
 <header class="tall">
   <div class="hero">
     <div>
-      <span class="kicker rise" data-ledge>Multi-protocol tunnel · Rust · nine transports</span>
-      <h1 class="rise" data-ledge style="transition-delay:.06s">A tunnel that<br><span class="br">changes shape</span><br>to get through.</h1>
-      <p class="lede rise" data-ledge style="transition-delay:.14s">Censors classify a connection from its opening handshake, within the first few hundred bytes. Spark treats that opening as the thing to get right, and gives it a repertoire deep enough that it never has to reuse one.</p>
+      <span class="kicker rise">Multi-protocol tunnel · Rust · nine transports</span>
+      <h1 class="rise" style="transition-delay:.06s">A tunnel that<br><span class="br">finds its own way</span><br>through censorship.</h1>
+      <p class="lede rise" style="transition-delay:.14s">Censors decide what a connection is from its opening handshake, inside the first few hundred bytes. Spark treats that opening as a search problem: try something, see what arrives, keep what works — because what gets through today will not get through forever.</p>
       <div class="cta rise" style="transition-delay:.24s">
-        <a class="btn pri" href="#adapt" data-ledge>How it works</a>
-        <a class="btn" href="architecture.html" data-ledge>Architecture</a>
-        <a class="btn" href="modules.html" data-ledge>Write a module</a>
+        <a class="btn pri" href="#adapt">How it works</a>
+        <a class="btn" href="architecture.html">Architecture</a>
+        <a class="btn" href="modules.html">Write a module</a>
       </div>
     </div>
     <div class="breach rise" style="transition-delay:.18s" aria-hidden="true">
