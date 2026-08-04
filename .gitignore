@@ -1,2 +1,5 @@
 dist/
 .wrangler/
+
+# deploy bookkeeping
+.last-deploy-url

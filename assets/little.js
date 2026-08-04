@@ -9,13 +9,18 @@
  * they build a ladder up its face and carry on over the top; meet a small gap and they leap it;
  * and a drifting ember that passes too close sends one spinning into the air.
  *
- * A deploy hazard, recorded because it cost real time: this file is served from a
- * content-hashed path (see build.sh). A query-string bust does NOT work — Cloudflare's edge
- * cache for /assets/* ignores the query — and worse, if an edge node is asked for a brand-new
- * asset path before that deployment has reached it, Pages answers with the not-found fallback
- * (index.html, as text/html, status 200) and caches THAT for hours. deploy.sh now verifies the
- * content-type of every hashed asset after publishing, because the symptom is invisible: the
- * page loads, the script silently does not.
+ * A deploy hazard, recorded because it cost real time. This file is served from a content-hashed
+ * path (see build.sh); a query-string bust does NOT work, because Cloudflare's edge cache for
+ * /assets/* ignores the query. Worse: ask an edge node for a brand-new asset path before that
+ * deployment has reached it and Pages answers with the not-found fallback — index.html, as
+ * text/html, status 200 — then caches it for hours. The page still loads and this script simply
+ * never runs, with nothing in the console to say so.
+ *
+ * The trap has a second floor. A post-deploy check that requests the new path immediately IS the
+ * thing that poisons it, so the first version of that check reliably created the failure it was
+ * written to catch. deploy.sh now verifies in an order that cannot: confirm the upload on the
+ * deployment-specific URL, wait for the live HTML to reference the new hash, and only then
+ * request the asset itself.
  *
  * Constraints this respects:
  *   - Same-origin file, so the strict `script-src 'self'` CSP holds.
