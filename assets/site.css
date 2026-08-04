@@ -134,8 +134,13 @@ h1 .vi{color:var(--violet)}
    display size without wrapping into four ragged lines. */
 .hero h1{font-size:clamp(33px,4.5vw,60px)}
 @media (max-width:940px){
-  .hero{grid-template-columns:1fr; gap:16px}
-  .breach{max-width:440px; margin-inline:auto}
+  /* Stacked, the graphic goes FIRST. With the text block above it the breach landed ~130px below
+     the fold on a phone, and since every figure is heading for the barren ground beneath the
+     crack, the whole crowd ended up off-screen. The graphic is aria-hidden, so this is a purely
+     visual reorder and the headline is still what a screen reader reaches first. */
+  .hero{grid-template-columns:1fr; gap:18px}
+  .breach{order:-1; max-width:400px; margin-inline:auto}
+  header{padding:74px 0 62px}
 }
 
 /* ---- THE BREACH ----
@@ -185,6 +190,15 @@ h1 .vi{color:var(--violet)}
   border-radius:2px; background:rgba(255,196,140,.04); pointer-events:none}
 .crack-mouth{position:absolute; left:54.25%; width:4.5%; top:56%; height:8px;
   border-radius:2px; background:rgba(255,222,180,.10); pointer-events:none}
+
+/* Must come after the base .ground rule above, not up in the hero's media query: a media query
+   adds no specificity, so an equally-specific rule later in the file wins regardless of viewport.
+   The 22% overhang is fine on a desktop where the breach is a narrow column with room either
+   side; on a phone the breach nearly fills the width, and the overhang pushed 42px past the
+   viewport — the document genuinely scrolled sideways, hidden by body{overflow-x:hidden}. */
+@media (max-width:940px){
+  .ground{left:-8%; right:-8%}
+}
 
 /* No rounded corners and no drop shadow: those made it read as a UI card sitting on the page
    rather than as a wall the page is looking at. It is a crop of something larger. */

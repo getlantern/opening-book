@@ -74,7 +74,12 @@
     for (var i = 0; i < sel.length; i++) {
       var el = sel[i];
       if (el.offsetWidth < 34 || el.offsetHeight < 10) continue;
-      if (el.offsetWidth > W * 0.96) continue;              // full-bleed things are not ledges
+      // The full-bleed guard keeps page-width containers from being treated as ground, but it
+      // only applies to elements matched by selector. Anything carrying data-ledge is an explicit
+      // author declaration and is trusted: the barren ground is deliberately 144% of the breach
+      // so it fades off-frame, which on a phone is wider than the viewport — this guard was
+      // silently discarding it, so the crowd had nowhere to stand and never appeared.
+      if (!el.hasAttribute('data-ledge') && el.offsetWidth > W * 0.96) continue;
       boxes.push(docRect(el));
     }
     // The crack, the foothold at it, and the ground beneath — the one place on the page where
