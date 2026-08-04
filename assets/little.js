@@ -9,6 +9,14 @@
  * they build a ladder up its face and carry on over the top; meet a small gap and they leap it;
  * and a drifting ember that passes too close sends one spinning into the air.
  *
+ * A deploy hazard, recorded because it cost real time: this file is served from a
+ * content-hashed path (see build.sh). A query-string bust does NOT work — Cloudflare's edge
+ * cache for /assets/* ignores the query — and worse, if an edge node is asked for a brand-new
+ * asset path before that deployment has reached it, Pages answers with the not-found fallback
+ * (index.html, as text/html, status 200) and caches THAT for hours. deploy.sh now verifies the
+ * content-type of every hashed asset after publishing, because the symptom is invisible: the
+ * page loads, the script silently does not.
+ *
  * Constraints this respects:
  *   - Same-origin file, so the strict `script-src 'self'` CSP holds.
  *   - `pointer-events: none`; it must never intercept a click.
