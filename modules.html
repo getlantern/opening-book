@@ -51,6 +51,7 @@
     <a href="#why">Why</a>
     <a href="#contract">Contract</a>
     <a href="#convention">Convention</a>
+    <a href="#config">Configuration</a>
     <a href="#menu">Host menu</a>
     <a href="#limits">Limits</a>
     <a href="#example">Example</a>
@@ -109,7 +110,7 @@
         <tr><td><code>handshake_step</code></td><td><code>(i32,i32) → i64</code></td>
             <td>Drive an interactive opening. Export this and the client runs a handshake before steady state.</td></tr>
         <tr><td><code>init</code></td><td><code>(i32,i32) → ()</code> <span class="opt">optional</span></td>
-            <td>One-time setup with configuration bytes.</td></tr>
+            <td>One-time setup with per-deployment configuration. Export it and it is called on every instantiation — including with zero bytes. See <a href="#config">Configuration</a>.</td></tr>
         <tr><td><code>reset</code></td><td><code>() → ()</code> <span class="opt">optional</span></td>
             <td>Called after every invocation once output has been copied out. Rewind your scratch arena here.</td></tr>
       </table></div>
@@ -149,9 +150,37 @@
   </div>
 </section>
 
+<section id="config">
+  <div class="spread">
+    <div class="rail"><span class="piece">♘</span><div class="no">04</div>
+      <div class="ann">A bundle is signed <span class="s">once</span>. A deployment is not.</div></div>
+    <div class="body">
+      <h2>Configuration, and where it comes from</h2>
+      <p class="lead">A module that is useful to more than one server needs per-deployment bytes: a key, a seed, an identity to imitate. Those arrive at <code>init</code>, and they can arrive by two routes. The difference matters more than it looks.</p>
+
+      <p>The bytes handed to <code>init</code> are a genome's <code>engine_params</code> — an opening plan addressed to your engine by name. The client resolves that plan from the first of these that decodes and matches your engine:</p>
+
+      <div class="scrollx"><table class="abi">
+        <tr><th>Source</th><th>Comes from</th><th>Wins?</th></tr>
+        <tr><td>A delivered genome</td><td>The server, in the outbound</td><td><b>Yes</b> — the deployment's own plan.</td></tr>
+        <tr><td>The bundle's genome</td><td>Baked into your signed artifact</td><td>Only if the server sent none.</td></tr>
+        <tr><td><code>init_config</code></td><td>The server, as raw hex</td><td>Fallback beneath both.</td></tr>
+      </table></div>
+
+      <div class="note warn"><b>Your bundle's own genome cannot hold a secret.</b> It is signed once and shipped to every deployment, so anything inside it is the same for every server that runs your transport — and it outranks <code>init_config</code>. Put a per-server key in <code>init_config</code> alone and the bundle's generic plan silently replaces it: your module is handed the plan you baked in months ago, not the one this server sent. Anything that differs per deployment belongs in a <em>server-delivered genome</em>.</div>
+
+      <p>This is not hypothetical. Spark's own BIP324 module carries a bundle genome of five bytes — a role and a network magic, all that is true everywhere — while each exit needs a 32-byte key on top. Until the server sent a complete genome, every dial was rejected before a byte left the machine.</p>
+
+      <div class="note"><b>If you export <code>init</code>, it is always called.</b> Including with zero bytes, when nothing was delivered. Check the length before you read — a module that assumes a populated config aborts on the one path it never tested.</div>
+
+      <p>Which leads to the last thing worth designing deliberately: <b>how you refuse.</b> A trap is a poor error channel. Every rejection your module can make — a short body, an unknown version, a length prefix that overruns — arrives at the operator as the same line, <code class="mono">wasm `unreachable` instruction executed</code>, with nothing to tell them apart. The host reports the length and the leading bytes it handed you, so put your discriminating fields first and keep the header cheap to read. An operator should be able to tell "nothing was delivered" from "the bytes were wrong" without rebuilding anything.</p>
+    </div>
+  </div>
+</section>
+
 <section id="menu">
   <div class="spread">
-    <div class="rail"><span class="piece">♞</span><div class="no">04</div>
+    <div class="rail"><span class="piece">♞</span><div class="no">05</div>
       <div class="ann">Real crypto, run <span class="s">natively</span>, free of fuel.</div></div>
     <div class="body">
       <h2>What the host provides</h2>
@@ -175,7 +204,7 @@
 
 <section id="limits">
   <div class="spread">
-    <div class="rail"><span class="piece">♛</span><div class="no">05</div>
+    <div class="rail"><span class="piece">♛</span><div class="no">06</div>
       <div class="ann">Every limit is a <span class="b">trap</span>, not a truncation.</div></div>
     <div class="body">
       <h2>Resource limits</h2>
@@ -200,7 +229,7 @@
 
 <section id="example">
   <div class="spread">
-    <div class="rail"><span class="piece">♟</span><div class="no">06</div>
+    <div class="rail"><span class="piece">♟</span><div class="no">07</div>
       <div class="ann">Eighty-three lines, <span class="s">no_std</span>, no dependencies.</div></div>
     <div class="body">
       <h2>A worked example</h2>
@@ -232,7 +261,7 @@
 
 <section id="ship">
   <div class="spread">
-    <div class="rail"><span class="piece">♚</span><div class="no">07</div>
+    <div class="rail"><span class="piece">♚</span><div class="no">08</div>
       <div class="ann">Unsigned is <span class="b">unloadable</span>.</div></div>
     <div class="body">
       <h2>Signing and shipping</h2>
@@ -254,7 +283,7 @@
 
 <section id="contribute">
   <div class="spread">
-    <div class="rail"><span class="piece">♦</span><div class="no">08</div>
+    <div class="rail"><span class="piece">♦</span><div class="no">09</div>
       <div class="ann">The interesting question is <span class="s">what to write</span>.</div></div>
     <div class="body">
       <h2>What's worth writing</h2>
